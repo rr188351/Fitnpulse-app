@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react'
-import googleLogo from './imports/Google Logo.png'
-import appleLogo from './imports/Applelogo.webp'
+import googleLogo from "@/imports/google-logo.png";
+import appleLogo from "@/imports/apple-logo.webp";
+
 import {
   AreaChart, Area, BarChart as RBarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
