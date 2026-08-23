@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react'
+import googleLogo from './imports/Google Logo.png'
+import appleLogo from './imports/Applelogo.webp'
 import {
   AreaChart, Area, BarChart as RBarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
@@ -478,11 +480,11 @@ export function OnboardingScreen({ slide = 0, onNav }: { slide?: number; onNav?:
         {/* Static nav buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 28 }}>
           {current < 2 ? (
-            <GBtn onClick={() => go(current + 1, 'fwd')} style={{ background: `linear-gradient(135deg,${s.accentColor},${s.accentColor}cc)`, boxShadow: `0 8px 24px ${s.accentColor}40` }}>Next →</GBtn>
+            <GBtn onClick={() => go(current + 1, 'fwd')} style={{ background: `linear-gradient(135deg,${s.accentColor},${s.accentColor}cc)`, boxShadow: `0 8px 24px ${s.accentColor}40` }}>Next</GBtn>
           ) : (
-            <GBtn onClick={() => onNav?.('login')}>Get Started 🚀</GBtn>
+            <GBtn onClick={() => onNav?.('login')}>Get Started </GBtn>
           )}
-          {current > 0 && <GBtn variant="ghost" onClick={() => go(current - 1, 'bwd')}>← Back</GBtn>}
+          {current > 0 && <GBtn variant="ghost" onClick={() => go(current - 1, 'bwd')}>Back</GBtn>}
         </div>
       </div>
     </div>
@@ -519,15 +521,17 @@ export function LoginScreen({ onNav }: { onNav?: (s: string) => void }) {
               <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
             </div>
 
-            {[{ icon: '🌐', label: 'Continue with Google' }, { icon: '🍎', label: 'Continue with Apple' }].map((b, i) => (
-              <button key={i} style={{
-                ...gl(0.7, 14, 14), width: '100%', padding: '13px 20px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                color: TXT, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                fontFamily: "'Outfit', sans-serif", marginBottom: 10,
+            {[
+              { iconSrc: googleLogo, name: 'Google' },
+              { iconSrc: appleLogo, name: 'Apple' },
+            ].map(b => (
+              <button key={b.name} aria-label={`Continue with ${b.name}`} style={{
+                ...gl(0.7, 14, 14), width: '100%', padding: '10px 20px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', marginBottom: 10,
                 border: `1px solid ${SOFT}`,
               }}>
-                <span style={{ fontSize: 18 }}>{b.icon}</span>{b.label}
+                <img src={b.iconSrc} alt="" style={{ width: 40, height: 35, objectFit: 'contain' }} />
               </button>
             ))}
           </div>
@@ -659,7 +663,7 @@ export function ProfileSetupScreen({ onNav }: { onNav?: (s: string) => void }) {
           </div>
         </div>
 
-        <GBtn onClick={() => onNav?.('device-sync')}>Next →</GBtn>
+        <GBtn onClick={() => onNav?.('device-sync')}>Next</GBtn>
       </div>
     </div>
   )
@@ -789,7 +793,7 @@ export function DeviceSyncScreen({ onNav }: { onNav?: (s: string) => void }) {
             )
           })}
         </div>
-        <GBtn onClick={() => onNav?.('goals')}>{isConnected ? 'Continue →' : 'Skip for Now'}</GBtn>
+        <GBtn onClick={() => onNav?.('goals')}>{isConnected ? 'Continue' : 'Skip for Now'}</GBtn>
       </div>
     </div>
   )
