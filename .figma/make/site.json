@@ -1,0 +1,10 @@
+{
+  "description": "A premium fitness app that tracks health metrics, offers AI-driven insights, and fosters community challenges to help users achieve their wellness goals.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
