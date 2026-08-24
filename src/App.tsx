@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   SplashScreen,
   OnboardingScreen,
@@ -28,6 +28,26 @@ export default function App() {
   const [animKey, setAnimKey] = useState(0)
   const [dir, setDir] = useState<'fwd' | 'bwd'>('fwd')
 
+  /* ── Centralized theme system ───────────────────────────── */
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('fp-theme')
+      return saved === 'dark' ? 'dark' : 'light'
+    } catch { return 'light' }
+  })
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-theme', theme)
+    try { localStorage.setItem('fp-theme', theme) } catch { /* ignore */ }
+    // Brief crossfade so surfaces/tokens transition smoothly (350–500ms ease-in-out).
+    root.classList.add('theme-transition')
+    const t = setTimeout(() => root.classList.remove('theme-transition'), 500)
+    return () => clearTimeout(t)
+  }, [theme])
+
+  const toggleTheme = () => setTheme(t => (t === 'light' ? 'dark' : 'light'))
+
   const nav = (s: string) => {
     const ci = SCREEN_ORDER.indexOf(current)
     const ni = SCREEN_ORDER.indexOf(s)
@@ -54,7 +74,7 @@ export default function App() {
       community:       <CommunityScreen onNav={nav} />,
       progress:        <ProgressScreen onNav={nav} />,
       account:         <AccountScreen onNav={nav} />,
-      settings:        <SettingsScreen onNav={nav} />,
+      settings:        <SettingsScreen onNav={nav} theme={theme} onToggleTheme={toggleTheme} />,
     }
     return map[id] ?? <HomeScreen onNav={nav} />
   }
@@ -65,7 +85,7 @@ export default function App() {
       width: '100vw',
       height: '100dvh',
       overflow: 'hidden',
-      background: 'linear-gradient(145deg,#f0fdf4 0%,#dcfce7 16%,#cffafe 42%,#e0f2fe 60%,#faf5ff 82%,#fdf4ff 100%)',
+      background: 'var(--fp-bg)',
       display: 'flex',
       justifyContent: 'center',
     }}>

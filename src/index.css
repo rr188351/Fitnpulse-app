@@ -41,6 +41,78 @@ body {
   100% { stroke-dashoffset: -251; }
 }
 
+/* ── Theme tokens ─────────────────────────────────────────── */
+:root,
+:root[data-theme='light'] {
+  --fp-bg: linear-gradient(145deg,#f0fdf4 0%,#dcfce7 16%,#cffafe 42%,#e0f2fe 60%,#faf5ff 82%,#fdf4ff 100%);
+  --fp-glass: rgba(255,255,255,0.72);
+  --fp-glass-2: rgba(255,255,255,0.8);
+  --fp-track: #F3F4F6;
+  --fp-field: #E5E7EB;
+  --fp-border: rgba(15,23,42,0.09);
+  --fp-border-strong: rgba(15,23,42,0.16);
+  --fp-input-bg: #F9FAFB;
+  --fp-faint: #D1D5DB;
+  --fp-surface: #FFFFFF;
+  --fp-text: #1F2937;
+  --fp-text-2: #374151;
+  --fp-muted: #6B7280;
+  --fp-lighter: rgba(31,41,55,0.35);
+  --fp-shadow: rgba(0,0,0,0.07);
+  --fp-shadow-soft: rgba(0,0,0,0.04);
+  --fp-accent: #16A34A;
+  --fp-accent-2: #0891B2;
+  --fp-lime: #65A30D;
+  --fp-orange: #EA580C;
+  --fp-red: #DC2626;
+  --fp-purple: #7C3AED;
+  --fp-pink: #DB2777;
+  --fp-glow: rgba(22,163,74,0.28);
+  --fp-glow-2: rgba(8,145,178,0.22);
+  --fp-glow-3: rgba(124,58,237,0.14);
+}
+:root[data-theme='dark'] {
+  --fp-bg: linear-gradient(145deg,#05070d 0%,#0a111d 45%,#06080f 100%);
+  --fp-glass: rgba(255,255,255,0.055);
+  --fp-glass-2: rgba(255,255,255,0.075);
+  --fp-track: rgba(255,255,255,0.1);
+  --fp-field: rgba(255,255,255,0.09);
+  --fp-border: rgba(255,255,255,0.09);
+  --fp-border-strong: rgba(255,255,255,0.16);
+  --fp-input-bg: rgba(255,255,255,0.05);
+  --fp-faint: rgba(255,255,255,0.35);
+  --fp-surface: #E8EEF7;
+  --fp-text: #E8EEF7;
+  --fp-text-2: #C2CFE0;
+  --fp-muted: #7E8CA3;
+  --fp-lighter: rgba(255,255,255,0.35);
+  --fp-shadow: rgba(0,0,0,0.25);
+  --fp-shadow-soft: rgba(0,0,0,0.15);
+  --fp-accent: #34D399;
+  --fp-accent-2: #22D3EE;
+  --fp-lime: #A3E635;
+  --fp-orange: #F59E0B;
+  --fp-red: #F87171;
+  --fp-purple: #8B5CF6;
+  --fp-pink: #EC4899;
+  --fp-glow: rgba(52,211,153,0.14);
+  --fp-glow-2: rgba(34,211,238,0.12);
+  --fp-glow-3: rgba(139,92,246,0.12);
+}
+
+/* Smooth crossfade while a theme switch is in flight (added briefly by JS) */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition-property: background-color, background, color, border-color,
+    box-shadow, filter, opacity, transform,
+    backdrop-filter, -webkit-backdrop-filter !important;
+  transition-duration: 420ms !important;
+  transition-timing-function: ease-in-out !important;
+  transition-delay: 0ms !important;
+}
+
 /* ── Animation spec keyframes ─────────────────────────────── */
 @keyframes logo-enter {
   from { opacity: 0; transform: scale(0.85); }
@@ -78,6 +150,41 @@ body {
 @keyframes hr-pulse {
   0%, 100% { transform: scale(1); opacity: 0.7; }
   50%       { transform: scale(1.15); opacity: 1; }
+}
+
+/* ── Widget / modal motion language ───────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(36px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes modal-pop {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes success-pop {
+  0%   { opacity: 0; transform: scale(0.3); }
+  55%  { transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes check-draw {
+  from { stroke-dashoffset: 24; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes bar-fill {
+  from { width: 0; }
+  to   { width: var(--fill-w, 100%); }
+}
+@keyframes shimmer-bar {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+@keyframes ripple-in {
+  from { transform: scale(0.4); opacity: 0.9; }
+  to   { transform: scale(2.4); opacity: 0; }
 }
 
 ::-webkit-scrollbar { width: 2px; height: 2px; }

@@ -1,11 +1,18 @@
-import { useState, useEffect, useRef, type CSSProperties } from 'react'
+﻿import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import googleLogo from "@/imports/google-logo.png";
-import appleLogo from "@/imports/apple-logo.webp";
+import appleLogo from "@/imports/apple-logo.png";
 
 import {
   AreaChart, Area, BarChart as RBarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts'
+
+import {
+  useTheme, FitModal, JoinChallengeWidget, InvitePeopleWidget, ShareProgressWidget,
+  EditProfile, Subscription, PersonalRecords, PrivacySecurity,
+  type ChallengeInfo, type ProfileData,
+} from './features'
+
 
 /* ─── Design Tokens ───────────────────────────────────────── */
 const G = '#16A34A'
@@ -15,13 +22,15 @@ const ORANGE = '#EA580C'
 const RED = '#DC2626'
 const PURPLE = '#7C3AED'
 const PINK = '#DB2777'
-const TXT = '#1F2937'
-const TXT2 = '#374151'
-const MUTED = '#6B7280'
-const LIGHTER = 'rgba(31,41,55,0.35)'
-const BORDER = 'rgba(255,255,255,0.85)'
-const SOFT = 'rgba(0,0,0,0.07)'
-const BG = 'linear-gradient(145deg,#f0fdf4 0%,#dcfce7 16%,#cffafe 42%,#e0f2fe 60%,#faf5ff 82%,#fdf4ff 100%)'
+const TXT = 'var(--fp-text)'
+const TXT2 = 'var(--fp-text-2)'
+const MUTED = 'var(--fp-muted)'
+const LIGHTER = 'var(--fp-lighter)'
+const BORDER = 'var(--fp-border-strong)'
+const SOFT = 'var(--fp-field)'
+const BG = 'var(--fp-bg)'
+
+/* ─── Animation hooks ────────────────────────────────────── */
 
 /* ─── Animation hooks ────────────────────────────────────── */
 function useCountUp(target: number, duration = 1200, delay = 0) {
@@ -52,12 +61,12 @@ function Animated({ children, delay = 0, style }: { children: React.ReactNode; d
 
 /* ─── Style helpers ───────────────────────────────────────── */
 const gl = (op = 0.72, blur = 22, r = 18): CSSProperties => ({
-  background: `rgba(255,255,255,${op})`,
+  background: 'var(--fp-glass)',
   backdropFilter: `blur(${blur}px)`,
   WebkitBackdropFilter: `blur(${blur}px)`,
-  border: `1px solid ${BORDER}`,
+  border: '1px solid var(--fp-border)',
   borderRadius: r,
-  boxShadow: '0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04)',
+  boxShadow: '0 4px 24px var(--fp-shadow), 0 1px 4px var(--fp-shadow-soft)',
 })
 
 const scr: CSSProperties = {
@@ -85,9 +94,9 @@ const innerScroll = (extraPadding = 0): CSSProperties => ({
 function BgBlobs() {
   return (
     <>
-      <div style={{ position: 'absolute', top: '-8%', right: '-18%', width: 300, height: 300, borderRadius: '50%', background: `radial-gradient(circle,rgba(22,163,74,0.28),transparent 70%)`, filter: 'blur(40px)', pointerEvents: 'none', zIndex: 0 }} />
-      <div style={{ position: 'absolute', bottom: '12%', left: '-12%', width: 260, height: 260, borderRadius: '50%', background: `radial-gradient(circle,rgba(8,145,178,0.22),transparent 70%)`, filter: 'blur(40px)', pointerEvents: 'none', zIndex: 0 }} />
-      <div style={{ position: 'absolute', top: '45%', right: '25%', width: 200, height: 200, borderRadius: '50%', background: `radial-gradient(circle,rgba(124,58,237,0.14),transparent 70%)`, filter: 'blur(35px)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', top: '-8%', right: '-18%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle,var(--fp-glow),transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', bottom: '12%', left: '-12%', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle,var(--fp-glow-2),transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', top: '45%', right: '25%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle,var(--fp-glow-3),transparent 70%)', filter: 'blur(35px)', pointerEvents: 'none', zIndex: 0 }} />
     </>
   )
 }
@@ -258,12 +267,12 @@ function Toggle({ on = false, onToggle }: { on?: boolean; onToggle?: () => void 
   return (
     <div onClick={onToggle} style={{
       width: 46, height: 26, borderRadius: 13, cursor: 'pointer', transition: 'background 0.25s',
-      background: on ? G : '#D1D5DB',
+      background: on ? G : 'var(--fp-faint)',
       position: 'relative', flexShrink: 0,
       boxShadow: on ? `0 2px 8px ${G}50` : 'none',
     }}>
       <div style={{
-        width: 20, height: 20, borderRadius: '50%', background: 'white',
+        width: 20, height: 20, borderRadius: '50%', background: 'var(--fp-surface)',
         position: 'absolute', top: 3, transition: 'left 0.25s',
         left: on ? 23 : 3,
         boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
@@ -468,7 +477,7 @@ export function OnboardingScreen({ slide = 0, onNav }: { slide?: number; onNav?:
             {SLIDES.map((_, i) => (
               <div key={i} onClick={() => go(i, i > current ? 'fwd' : 'bwd')} style={{
                 width: i === current ? 28 : 8, height: 8, borderRadius: 4,
-                background: i === current ? s.accentColor : '#D1D5DB',
+                background: i === current ? s.accentColor : 'var(--fp-faint)',
                 transition: 'all 0.3s', cursor: 'pointer',
               }} />
             ))}
@@ -496,6 +505,7 @@ export function OnboardingScreen({ slide = 0, onNav }: { slide?: number; onNav?:
    SCREEN 5 — LOGIN
    ─────────────────────────────────────────────────────────── */
 export function LoginScreen({ onNav }: { onNav?: (s: string) => void }) {
+  const theme = useTheme()
   return (
     <div style={{ ...scr, display: 'flex', flexDirection: 'column', padding: '52px 24px 40px', alignItems: 'center', position: 'relative' }}>
       <BgBlobs />
@@ -517,9 +527,9 @@ export function LoginScreen({ onNav }: { onNav?: (s: string) => void }) {
             <GBtn onClick={() => onNav?.('home')}>Sign In</GBtn>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
-              <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+              <div style={{ flex: 1, height: 1, background: 'var(--fp-field)' }} />
               <span style={{ color: MUTED, fontSize: 12 }}>or continue with</span>
-              <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+              <div style={{ flex: 1, height: 1, background: 'var(--fp-field)' }} />
             </div>
 
             {[
@@ -532,7 +542,7 @@ export function LoginScreen({ onNav }: { onNav?: (s: string) => void }) {
                 cursor: 'pointer', marginBottom: 10,
                 border: `1px solid ${SOFT}`,
               }}>
-                <img src={b.iconSrc} alt="" style={{ width: 40, height: 35, objectFit: 'contain' }} />
+                <img src={b.iconSrc} alt="" style={{ width: 40, height: 35, objectFit: 'contain', filter: b.name === 'Apple' && theme === 'dark' ? 'invert(1) brightness(0.9)' : undefined }} />
               </button>
             ))}
           </div>
@@ -656,7 +666,7 @@ export function ProfileSetupScreen({ onNav }: { onNav?: (s: string) => void }) {
                 flex: 1, padding: '13px 4px', borderRadius: 14, fontSize: 11, fontWeight: 700,
                 cursor: 'pointer', fontFamily: "'Outfit', sans-serif", transition: 'all 0.2s',
                 background: level === lv.id ? `${lv.color}18` : 'rgba(255,255,255,0.7)',
-                border: `1.5px solid ${level === lv.id ? lv.color : '#E5E7EB'}`,
+                border: `1.5px solid ${level === lv.id ? lv.color : 'var(--fp-field)'}`,
                 color: level === lv.id ? lv.color : MUTED,
                 boxShadow: level === lv.id ? `0 4px 14px ${lv.color}30` : 'none',
               }}>{lv.label}</button>
@@ -760,7 +770,7 @@ export function DeviceSyncScreen({ onNav }: { onNav?: (s: string) => void }) {
 
         {/* Progress bar */}
         {syncSt !== 'idle' && (
-          <div style={{ height: 4, borderRadius: 2, background: '#E5E7EB', marginBottom: 16, overflow: 'hidden' }}>
+          <div style={{ height: 4, borderRadius: 2, background: 'var(--fp-field)', marginBottom: 16, overflow: 'hidden' }}>
             <div style={{
               height: '100%', borderRadius: 2,
               background: isConnected ? `linear-gradient(90deg,${G},${LIME})` : `linear-gradient(90deg,${CYAN},${G})`,
@@ -848,8 +858,8 @@ export function GoalSelectionScreen({ onNav }: { onNav?: (s: string) => void }) 
                 </div>
                 <div style={{
                   width: 24, height: 24, borderRadius: '50%',
-                  background: on ? G : '#F3F4F6',
-                  border: `2px solid ${on ? G : '#E5E7EB'}`,
+                  background: on ? G : 'var(--fp-track)',
+                  border: `2px solid ${on ? G : 'var(--fp-field)'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 12, color: 'white', flexShrink: 0, transition: 'all 0.2s',
                   boxShadow: on ? `0 2px 8px ${G}50` : 'none',
@@ -884,7 +894,7 @@ export function PermissionsScreen({ onNav }: { onNav?: (s: string) => void }) {
       <BgBlobs />
       <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 54, marginBottom: 12 }}>🛡️</div>
+          <div style={{ fontSize: 54, marginBottom: 12 }}>📱</div>
           <h2 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: TXT }}>Enable Permissions</h2>
           <p style={{ margin: 0, color: MUTED, fontSize: 14, lineHeight: 1.55 }}>
             FitPulse needs these to deliver the full experience
@@ -921,6 +931,7 @@ export function PermissionsScreen({ onNav }: { onNav?: (s: string) => void }) {
    ─────────────────────────────────────────────────────────── */
 /* Notification panel — slides down from top of home screen */
 function NotificationPanel({ onClose }: { onClose: () => void }) {
+  const theme = useTheme()
   const items = [
     { icon: '🏆', title: 'Challenge Complete!', msg: 'You finished the Weekly 70K Steps challenge.', time: '2m ago', color: ORANGE },
     { icon: '👥', title: 'Rahul liked your post', msg: '"5K personal best" got 14 reactions!', time: '18m ago', color: G },
@@ -931,13 +942,13 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
     <>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 19, background: 'rgba(0,0,0,0.08)' }} />
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, animation: 'fade-slide-up 260ms ease-out both' }}>
-        <div style={{ ...gl(0.97, 30, 0), borderRadius: '0 0 28px 28px', padding: '52px 18px 20px', boxShadow: '0 12px 48px rgba(0,0,0,0.14)' }}>
+        <div style={{ ...gl(0.97, 30, 0), background: theme === 'dark' ? 'rgba(10,16,28,0.94)' : 'rgba(255,255,255,0.96)', borderRadius: '0 0 28px 28px', padding: '52px 18px 20px', boxShadow: '0 12px 48px rgba(0,0,0,0.14)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: TXT }}>Notifications</div>
             <button onClick={onClose} style={{ background: 'none', border: 'none', color: MUTED, fontSize: 13, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>Clear all</button>
           </div>
           {items.map((n, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, padding: '11px 0', borderBottom: i < items.length - 1 ? '1px solid #F3F4F6' : 'none', animation: `fade-slide-up 300ms ease-out ${i * 60}ms both` }}>
+            <div key={i} style={{ display: 'flex', gap: 12, padding: '11px 0', borderBottom: i < items.length - 1 ? '1px solid var(--fp-track)' : 'none', animation: `fade-slide-up 300ms ease-out ${i * 60}ms both` }}>
               <div style={{ width: 42, height: 42, borderRadius: 13, background: `${n.color}15`, border: `1px solid ${n.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{n.icon}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: TXT }}>{n.title}</div>
@@ -1082,7 +1093,7 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
               <Tag color={ORANGE}>3 days left</Tag>
             </div>
             <div style={{ fontSize: 12, color: MUTED, marginBottom: 8 }}>10,000 Steps Every Day</div>
-            <div style={{ height: 6, borderRadius: 3, background: '#F3F4F6', marginBottom: 6 }}>
+            <div style={{ height: 6, borderRadius: 3, background: 'var(--fp-track)', marginBottom: 6 }}>
               <div style={{ width: '72%', height: '100%', borderRadius: 3, background: `linear-gradient(90deg,${G},${LIME})` }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
@@ -1229,7 +1240,7 @@ export function WorkoutsScreen({ onNav }: { onNav?: (s: string) => void }) {
             { icon: '🏋️', name: 'Upper Body', time: 'Yesterday', cal: '298 kcal', dur: '52 min' },
             { icon: '🧘', name: 'Yoga Flow', time: '2 days ago', cal: '145 kcal', dur: '30 min' },
           ].map((w, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 11, paddingBottom: i < 2 ? 11 : 0, borderBottom: i < 2 ? `1px solid #F3F4F6` : 'none', marginBottom: i < 2 ? 11 : 0 }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 11, paddingBottom: i < 2 ? 11 : 0, borderBottom: i < 2 ? `1px solid var(--fp-track)` : 'none', marginBottom: i < 2 ? 11 : 0 }}>
               <div style={{ width: 38, height: 38, borderRadius: 11, background: `${G}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>{w.icon}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: TXT }}>{w.name}</div>
@@ -1281,8 +1292,8 @@ function WaterTab() {
           <button key={i} onClick={() => setGlasses(i + 1)} style={{
             width: 36, height: 36, borderRadius: 10, fontSize: 18,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: i < glasses ? `${CYAN}18` : '#F9FAFB',
-            border: `1.5px solid ${i < glasses ? CYAN + '55' : '#E5E7EB'}`,
+            background: i < glasses ? `${CYAN}18` : 'var(--fp-input-bg)',
+            border: `1.5px solid ${i < glasses ? CYAN + '55' : 'var(--fp-field)'}`,
             cursor: 'pointer',
             transition: 'all 200ms ease-out',
             transform: i < glasses ? 'scale(1.05)' : 'scale(1)',
@@ -1373,7 +1384,7 @@ export function ActivityLogScreen({ onNav }: { onNav?: (s: string) => void }) {
                   <Bar dataKey="v" radius={[5,5,0,0]} isAnimationActive={true} animationDuration={1000} animationEasing="ease-out">
                     {stepData.map((_,i) => <Cell key={i} fill={i === 6 ? G : `${G}55`} />)}
                   </Bar>
-                  <Tooltip contentStyle={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 11, color: TXT }} />
+                  <Tooltip contentStyle={{ background: 'var(--fp-surface)', border: '1px solid var(--fp-field)', borderRadius: 8, fontSize: 11, color: TXT }} />
                 </RBarChart>
               </ResponsiveContainer>
             </div>
@@ -1408,7 +1419,7 @@ export function ActivityLogScreen({ onNav }: { onNav?: (s: string) => void }) {
                     </linearGradient>
                   </defs>
                   <Area type="monotone" dataKey="v" stroke={RED} fill="url(#hrG)" strokeWidth={2.5} dot={false} />
-                  <Tooltip contentStyle={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 11, color: TXT }} />
+                  <Tooltip contentStyle={{ background: 'var(--fp-surface)', border: '1px solid var(--fp-field)', borderRadius: 8, fontSize: 11, color: TXT }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -1477,7 +1488,7 @@ export function ActivityLogScreen({ onNav }: { onNav?: (s: string) => void }) {
                   <Bar dataKey="value" radius={[0,6,6,0]}>
                     {sleepData.map((s, i) => <Cell key={i} fill={s.fill} />)}
                   </Bar>
-                  <Tooltip contentStyle={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 11 }} />
+                  <Tooltip contentStyle={{ background: 'var(--fp-surface)', border: '1px solid var(--fp-field)', borderRadius: 8, fontSize: 11 }} />
                 </RBarChart>
               </ResponsiveContainer>
             </div>
@@ -1500,7 +1511,7 @@ export function ActivityLogScreen({ onNav }: { onNav?: (s: string) => void }) {
               <Tag color={G}>LOW STRESS</Tag>
             </div>
             <div style={{ position: 'relative', height: 10, borderRadius: 5, background: `linear-gradient(90deg,${G},${LIME},${ORANGE},${RED})`, marginBottom: 8 }}>
-              <div style={{ position: 'absolute', top: -4, left: '24%', width: 18, height: 18, borderRadius: '50%', background: 'white', border: `3px solid ${G}`, transform: 'translateX(-50%)', boxShadow: `0 2px 8px ${G}40` }} />
+              <div style={{ position: 'absolute', top: -4, left: '24%', width: 18, height: 18, borderRadius: '50%', background: 'var(--fp-surface)', border: `3px solid ${G}`, transform: 'translateX(-50%)', boxShadow: `0 2px 8px ${G}40` }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: MUTED, fontWeight: 600, marginBottom: 22 }}>
               <span>Low</span><span>Moderate</span><span>High</span><span>Very High</span>
@@ -1531,6 +1542,20 @@ export function ActivityLogScreen({ onNav }: { onNav?: (s: string) => void }) {
    ─────────────────────────────────────────────────────────── */
 export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
   const [likes, setLikes] = useState([false, false, false])
+  const [flow, setFlow] = useState<null | 'join' | 'invite' | 'share'>(null)
+  const [joined, setJoined] = useState(false)
+  const challenge: ChallengeInfo = {
+    title: 'Weekly 70K', desc: 'Walk 70,000 steps between Monday and Sunday. Sync your tracker to earn the finisher badge!', reward: '🏆 Finisher Badge', endDate: '3d left', total: 70000, progress: 72, img: '🏃',
+    participants: [{ name: 'Rahul K.', avatar: '🧑‍🦰' }, { name: 'Priya M.', avatar: '👩‍🦳' }, { name: 'Dev R.', avatar: '🧑‍🦱' }],
+  }
+  const people: { name: string; avatar: string; added: boolean }[] = [
+    { name: 'Rahul K.', avatar: '🧑‍🦰', added: true },
+    { name: 'Priya M.', avatar: '👩‍🦳', added: false },
+    { name: 'Dev R.', avatar: '🧑‍🦱', added: false },
+    { name: 'Meera S.', avatar: '👩', added: false },
+    { name: 'Arjun P.', avatar: '👨', added: false },
+  ]
+  const stats = [{ label: 'Steps', value: '50,430' }, { label: 'Streak', value: '12d' }, { label: 'Active min', value: '210' }]
 
   return (
     <div style={{ ...scr, overflow: 'hidden' }}>
@@ -1540,11 +1565,12 @@ export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
         <StatusBar />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
           <h2 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: TXT }}>Community</h2>
-          <button style={{ ...gl(0.82, 12, 20), border: `1px solid ${G}30`, padding: '7px 14px', fontSize: 12, fontWeight: 700, color: G, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ fontSize: 14 }}>+</span> Join
+                    <button onClick={() => setFlow('join')} style={{ ...gl(0.95, 14, 16), border: `1px solid ${G}30`, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: '#fff', background: `linear-gradient(135deg,${G},${CYAN})`, boxShadow: `0 8px 20px ${G}30`, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 17 }}>+</span> Join Challenge
           </button>
         </div>
-        <p style={{ margin: 0, color: MUTED, fontSize: 14 }}>Challenges, friends & achievements</p>
+                <p style={{ margin: 0, color: MUTED, fontSize: 14 }}>Challenges, friends & achievements</p>
+        {joined && <div style={{ marginTop: 12, padding: '11px 14px', borderRadius: 12, ...gl(0.85, 18, 12), color: G, fontSize: 12.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>🎉 You joined <b style={{ fontSize: 13 }}>Weekly 70K</b> — good luck!</div>}
       </div>
 
       <div style={{ padding: '0 18px' }}>
@@ -1559,7 +1585,7 @@ export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
               <div style={{ width: 38, height: 38, borderRadius: 11, background: `${c.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 8 }}>{c.icon}</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: TXT }}>{c.title}</div>
               <div style={{ fontSize: 11, color: MUTED, marginBottom: 8 }}>{c.end}</div>
-              <div style={{ height: 5, borderRadius: 3, background: '#F3F4F6', marginBottom: 4 }}>
+              <div style={{ height: 5, borderRadius: 3, background: 'var(--fp-track)', marginBottom: 4 }}>
                 <div style={{ width: `${c.progress}%`, height: '100%', borderRadius: 3, background: c.color }} />
               </div>
               <div style={{ fontSize: 10, color: c.color, fontWeight: 700 }}>{c.progress}%</div>
@@ -1582,7 +1608,7 @@ export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: (u as any).you ? '10px 8px' : '10px 0',
-              borderBottom: i < 3 ? `1px solid #F3F4F6` : 'none',
+              borderBottom: i < 3 ? `1px solid var(--fp-track)` : 'none',
               background: (u as any).you ? `${G}10` : 'transparent',
               borderRadius: (u as any).you ? 10 : 0,
               animation: `fade-slide-up 350ms ease-out ${i * 80}ms both`,
@@ -1630,6 +1656,15 @@ export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
         ))}
       </div>{/* end content padding */}
       </div>{/* end innerScroll */}
+            <FitModal open={flow === 'join'} title="Join Challenge" subtitle="Weekly 70K Steps · 72% complete · 3d left" onClose={() => setFlow(null)}>
+        <JoinChallengeWidget challenge={challenge} onAccept={() => setJoined(true)} onInvite={() => setFlow('invite')} onShare={() => setFlow('share')} />
+      </FitModal>
+      <FitModal open={flow === 'invite'} title="Invite People" subtitle="Invite friends to this challenge" onClose={() => setFlow(null)}>
+        <InvitePeopleWidget people={people} onBack={() => setFlow('join')} onInvite={() => setFlow(null)} />
+      </FitModal>
+      <FitModal open={flow === 'share'} title="Share Progress" subtitle="Share your Weekly 70K progress" onClose={() => setFlow(null)}>
+        <ShareProgressWidget challenge={challenge} stats={stats} onBack={() => setFlow(null)} />
+      </FitModal>
       <BottomNav active="community" onNav={onNav} />
     </div>
   )
@@ -1709,7 +1744,7 @@ export function ProgressScreen({ onNav }: { onNav?: (s: string) => void }) {
               <XAxis dataKey="d" axisLine={false} tickLine={false} tick={{ fill: MUTED, fontSize: 10 }} />
               <YAxis domain={[70, 75]} hide />
               <Area type="monotone" dataKey="v" stroke={G} fill="url(#wGrad2)" strokeWidth={2.5} dot={{ r: 3.5, fill: G, strokeWidth: 2, stroke: 'white' }} />
-              <Tooltip contentStyle={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 11 }} formatter={(v: any) => [`${v} kg`, 'Weight']} />
+              <Tooltip contentStyle={{ background: 'var(--fp-surface)', border: '1px solid var(--fp-field)', borderRadius: 8, fontSize: 11 }} formatter={(v: any) => [`${v} kg`, 'Weight']} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -1770,6 +1805,21 @@ export function ProgressScreen({ onNav }: { onNav?: (s: string) => void }) {
    SCREEN 16 — ACCOUNT
    ─────────────────────────────────────────────────────────── */
 export function AccountScreen({ onNav }: { onNav?: (s: string) => void }) {
+  const theme = useTheme()
+  const [modal, setModal] = useState<null | 'edit' | 'subscription' | 'records' | 'privacy'>(null)
+  const profile: ProfileData = { name: 'Ananya Sharma', email: 'ananya@fitpulse.app', height: '165', weight: '58', level: 'Intermediate' }
+  const records = [
+    { label: '5K Run', value: '28:30', icon: '🏃', color: CYAN },
+    { label: 'Bench Press', value: '100kg', icon: '💪', color: ORANGE, num: 100 },
+    { label: 'Workouts', value: '247', icon: '🏋️', color: G, num: 247 },
+    { label: 'Longest Streak', value: '42d', icon: '🔥', color: RED, num: 42 },
+  ]
+  const privacy = [
+    { key: 'p1', label: 'Private Profile', desc: 'Hide activity from friends', on: false },
+    { key: 'p2', label: 'Activity Status', desc: 'Show when you are online', on: true },
+    { key: 'p3', label: 'Data Sharing', desc: 'Share anonymized metrics', on: true },
+    { key: 'p4', label: 'Login Alerts', desc: 'Email on new device', on: true },
+  ]
   const menu = [
     { icon: '✏️', label: 'Edit Profile', sub: 'Update your information', color: G },
     { icon: '🎯', label: 'Goals & Progress', sub: 'Track your milestones', color: CYAN },
@@ -1795,17 +1845,17 @@ export function AccountScreen({ onNav }: { onNav?: (s: string) => void }) {
         <div style={{
           ...gl(0.88, 24, 24), padding: '22px 20px', marginBottom: 16, textAlign: 'center',
           boxShadow: '0 8px 40px rgba(0,0,0,0.1)',
-          background: 'linear-gradient(135deg,rgba(255,255,255,0.88),rgba(240,253,244,0.85))',
+          background: theme === 'dark' ? 'linear-gradient(135deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))' : 'linear-gradient(135deg,rgba(255,255,255,0.55),rgba(240,253,244,0.40))',
           borderTop: `3px solid ${G}`,
         }}>
           <div style={{ position: 'relative', display: 'inline-block', marginBottom: 12 }}>
-            <div style={{ width: 72, height: 72, borderRadius: '50%', background: `linear-gradient(135deg,${G},${CYAN})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, boxShadow: `0 0 0 4px white, 0 0 0 6px ${G}30` }}>👩‍🦱</div>
-            <div style={{ position: 'absolute', bottom: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: G, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, border: '2px solid white' }}>✏️</div>
+            <div style={{ width: 72, height: 72, borderRadius: '50%', background: `linear-gradient(135deg,${G},${CYAN})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, boxShadow: `0 0 0 4px ${theme === 'dark' ? 'rgba(255,255,255,0.14)' : LIGHTER}, 0 0 0 6px ${G}30` }}>👩‍🦱</div>
+            <div style={{ position: 'absolute', bottom: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: G, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, border: `2px solid ${theme === 'dark' ? 'rgba(255,255,255,0.22)' : 'white'}` }}>✏️</div>
           </div>
           <div style={{ fontSize: 20, fontWeight: 800, color: TXT }}>Ananya Sharma</div>
           <div style={{ fontSize: 12, color: MUTED, marginBottom: 6 }}>ananya@fitpulse.app</div>
           <Tag color={LIME}>⭐ FitPulse Pro</Tag>
-          <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 18, paddingTop: 16, borderTop: `1px solid #F3F4F6` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 18, paddingTop: 16, borderTop: `1px solid var(--fp-track)` }}>
             {[{ v: '247', l: 'Workouts' }, { v: '100🔥', l: 'Day Streak' }, { v: '18', l: 'Badges' }].map((s, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 18, fontWeight: 800, color: TXT }}>{s.v}</div>
@@ -1819,7 +1869,11 @@ export function AccountScreen({ onNav }: { onNav?: (s: string) => void }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {menu.map((item, i) => (
             <button key={i} onClick={() => {
-              if (item.label === 'Device Sync') onNav?.('device-sync')
+                            if (item.label === 'Edit Profile') setModal('edit')
+              else if (item.label === 'Subscription') setModal('subscription')
+              else if (item.label === 'Personal Records') setModal('records')
+              else if (item.label === 'Privacy & Security') setModal('privacy')
+              else if (item.label === 'Device Sync') onNav?.('device-sync')
               else if (item.label === 'Goals & Progress') onNav?.('goals')
               else if (item.label === 'Sign Out') onNav?.('login')
             }} style={{
@@ -1836,7 +1890,7 @@ export function AccountScreen({ onNav }: { onNav?: (s: string) => void }) {
                 <div style={{ fontSize: 14, fontWeight: 600, color: item.label === 'Sign Out' ? RED : TXT }}>{item.label}</div>
                 {item.sub && <div style={{ fontSize: 11, color: MUTED }}>{item.sub}</div>}
               </div>
-              {item.label !== 'Sign Out' && <span style={{ fontSize: 16, color: '#D1D5DB' }}>›</span>}
+              {item.label !== 'Sign Out' && <span style={{ fontSize: 16, color: 'var(--fp-faint)' }}>›</span>}
             </button>
           ))}
         </div>
@@ -1846,6 +1900,19 @@ export function AccountScreen({ onNav }: { onNav?: (s: string) => void }) {
         </div>
       </div>
       </div>{/* end innerScroll */}
+
+      <FitModal open={modal === 'edit'} title="Edit Profile" subtitle="Update your information" onClose={() => setModal(null)}>
+        <EditProfile profile={profile} onBack={() => setModal(null)} onSave={() => {}} />
+      </FitModal>
+      <FitModal open={modal === 'subscription'} title="Subscription" subtitle="FitPulse Pro" onClose={() => setModal(null)}>
+        <Subscription onBack={() => setModal(null)} onUpgrade={() => setModal(null)} />
+      </FitModal>
+      <FitModal open={modal === 'records'} title="Personal Records" subtitle="Your best performances" onClose={() => setModal(null)}>
+        <PersonalRecords records={records} onBack={() => setModal(null)} />
+      </FitModal>
+      <FitModal open={modal === 'privacy'} title="Privacy & Security" subtitle="Manage your data" onClose={() => setModal(null)}>
+        <PrivacySecurity settings={privacy} onBack={() => setModal(null)} onUpdate={() => {}} />
+      </FitModal>
       <BottomNav active="account" onNav={onNav} />
     </div>
   )
@@ -1854,7 +1921,7 @@ export function AccountScreen({ onNav }: { onNav?: (s: string) => void }) {
 /* ───────────────────────────────────────────────────────────
    SCREEN 17 — SETTINGS
    ─────────────────────────────────────────────────────────── */
-export function SettingsScreen({ onNav }: { onNav?: (s: string) => void }) {
+export function SettingsScreen({ onNav, theme = 'dark', onToggleTheme }: { onNav?: (s: string) => void; theme?: 'light' | 'dark'; onToggleTheme?: () => void }) {
   const [t, setT] = useState({ notif: true, dark: false, health: true, auto: false, sounds: true, haptics: true })
   const tog = (k: string) => setT(p => ({ ...p, [k]: !(p as any)[k] }))
 
@@ -1865,7 +1932,7 @@ export function SettingsScreen({ onNav }: { onNav?: (s: string) => void }) {
         { key: 'notif', icon: '🔔', label: 'Push Notifications', sub: 'Reminders & challenges', type: 'toggle' },
         { key: 'sounds', icon: '🔊', label: 'Sounds', sub: 'Workout & achievement sounds', type: 'toggle' },
         { key: 'haptics', icon: '📳', label: 'Haptic Feedback', sub: 'Vibration on interactions', type: 'toggle' },
-        { key: 'dark', icon: '🌙', label: 'Dark Mode', sub: 'Currently disabled', type: 'toggle' },
+        { key: 'dark', icon: '🌙', label: 'Dark Mode', sub: theme === 'dark' ? 'Currently enabled' : 'Currently disabled', type: 'toggle' },
       ],
     },
     {
@@ -1873,7 +1940,7 @@ export function SettingsScreen({ onNav }: { onNav?: (s: string) => void }) {
       items: [
         { key: 'health', icon: '❤️', label: 'Health Integration', sub: 'Sync with Apple / Google Health', type: 'toggle' },
         { key: 'auto', icon: '🔄', label: 'Auto Backup', sub: 'Backup data to cloud', type: 'toggle' },
-        { icon: '🛡️', label: 'Privacy Settings', sub: 'Manage your data', type: 'nav' },
+        { icon: '🔐', label: 'Privacy Settings', sub: 'Manage your data', type: 'nav' },
         { icon: '🔒', label: 'Security', sub: 'Biometrics & passcode', type: 'nav' },
       ],
     },
@@ -1908,16 +1975,16 @@ export function SettingsScreen({ onNav }: { onNav?: (s: string) => void }) {
               {sec.items.map((item: any, i) => (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 13, padding: '14px 16px',
-                  borderBottom: i < sec.items.length - 1 ? `1px solid #F3F4F6` : 'none',
+                  borderBottom: i < sec.items.length - 1 ? `1px solid var(--fp-track)` : 'none',
                 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F9FAFB', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--fp-input-bg)', border: '1px solid var(--fp-field)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: TXT }}>{item.label}</div>
                     <div style={{ fontSize: 11, color: MUTED }}>{item.sub}</div>
                   </div>
                   {item.type === 'toggle'
-                    ? <Toggle on={(t as any)[item.key]} onToggle={() => tog(item.key)} />
-                    : <span style={{ fontSize: 16, color: '#D1D5DB' }}>›</span>}
+                    ? <Toggle on={item.key === 'dark' ? theme === 'dark' : (t as any)[item.key]} onToggle={() => item.key === 'dark' ? (onToggleTheme ? onToggleTheme() : tog('dark')) : tog(item.key)} />
+                    : <span style={{ fontSize: 16, color: 'var(--fp-faint)' }}>›</span>}
                 </div>
               ))}
             </div>
