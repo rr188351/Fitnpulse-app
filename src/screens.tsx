@@ -426,12 +426,13 @@ const SLIDES = [
     subtitle: "Join challenges, climb leaderboards, and celebrate wins with friends.",
     accentColor: PURPLE,
     illustration: () => (
-      <div style={{ position: 'relative', height: 210, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', animation: 'float 2.5s ease-in-out infinite', zIndex: 1 }}>
-          <div style={{ fontSize: 76 }}>🏆</div>
-          <div style={{ ...gl(0.82, 12, 14), padding: '5px 14px', fontSize: 11, fontWeight: 700, color: PURPLE, marginTop: 8 }}>Champion League</div>
+      <div style={{ position: 'relative', height: 210, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        {/* Trophy + badge — pinned to the top center, above the leaderboard cards */}
+        <div style={{ position: 'absolute', top: 2, left: 0, right: 0, textAlign: 'center', zIndex: 1 }}>
+          <div style={{ fontSize: 72, animation: 'float 2.5s ease-in-out infinite', display: 'inline-block' }}>🏆</div>
+          <div style={{ ...gl(0.82, 12, 14), padding: '5px 14px', fontSize: 11, fontWeight: 700, color: PURPLE, marginTop: 8, display: 'inline-block' }}>Champion League</div>
         </div>
-        <div style={{ position: 'absolute', bottom: 16, display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, zIndex: 2 }}>
           {[{e:'👩‍🦱',n:'Ananya',s:'12.4k',c:G},{e:'🧑‍🦰',n:'Rahul',s:'11.8k',c:ORANGE},{e:'👩‍🦳',n:'Priya',s:'10.9k',c:CYAN}].map((u,i) => (
             <div key={i} style={{ ...gl(0.8, 14, 16), padding: '9px 12px', textAlign: 'center', minWidth: 72 }}>
               <div style={{ fontSize: 22 }}>{u.e}</div>
@@ -1063,7 +1064,7 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
         <Animated delay={430}>
           <div style={{
             ...gl(0.82, 22, 20), padding: '16px 18px', marginBottom: 12,
-            background: 'rgba(255,255,255,0.78)',
+            background: 'var(--fp-glass)',
             borderLeft: `4px solid ${G}`,
             boxShadow: `0 4px 20px ${G}15`,
           }}>
@@ -1132,7 +1133,7 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
             {[
               { icon: '🍎', label: 'Log Meal', nav: 'activity' },
               { icon: '🏋️', label: 'Log Workout', nav: 'workouts' },
-              { icon: '💧', label: 'Add Water', nav: 'activity' },
+              { icon: '💧', label: 'Add Water', nav: 'addwater' },
             ].map((a, i) => (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 8,
@@ -1306,8 +1307,8 @@ function WaterTab() {
   )
 }
 
-export function ActivityLogScreen({ onNav }: { onNav?: (s: string) => void }) {
-  const [tab, setTab] = useState('steps')
+export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) => void; initialTab?: string }) {
+  const [tab, setTab] = useState(initialTab ?? 'steps')
 
   const tabs = [
     { id: 'steps', label: '👟 Steps' },

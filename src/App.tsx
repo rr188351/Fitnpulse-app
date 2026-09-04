@@ -21,6 +21,7 @@ const SCREEN_ORDER = [
   'splash','onboard1','onboard2','onboard3','login','signup',
   'profile-setup','device-sync','goals','permissions',
   'home','workouts','activity','community','progress','account','settings',
+  'addwater',
 ]
 
 export default function App() {
@@ -71,6 +72,7 @@ export default function App() {
       home:            <HomeScreen onNav={nav} />,
       workouts:        <WorkoutsScreen onNav={nav} />,
       activity:        <ActivityLogScreen onNav={nav} />,
+      addwater:        <ActivityLogScreen onNav={nav} initialTab="water" />,
       community:       <CommunityScreen onNav={nav} />,
       progress:        <ProgressScreen onNav={nav} />,
       account:         <AccountScreen onNav={nav} />,
