@@ -214,8 +214,7 @@ body {
     padding-left 300ms ease-in-out, padding-right 300ms ease-in-out;
 }
 
-@media (min-width: 768px) and (max-width: 1024px),
-       (min-width: 1025px) and (max-width: 1400px) and (pointer: coarse) {
+@media (min-width: 768px) and (max-width: 2048px)  {
   .fp-shell--tablet {
     justify-content: center !important;
     align-items: flex-start !important;

@@ -28,29 +28,47 @@ import {
 function useBreakpoint(): 'mobile' | 'tablet' | 'desktop' {
   const get = () => {
     if (typeof window === 'undefined') return 'mobile' as const
+
+    // The 3D Lab renders Fitnpulse inside a high-resolution iframe.
+    // The iframe may be 1024/1536/2048px wide, but the app must
+    // keep its phone-style 430px layout and scale it proportionally.
+    const isEmbedded =
+      window.self !== window.top ||
+      new URLSearchParams(window.location.search).has('embed')
+
+    if (isEmbedded) {
+      return 'tablet' as const
+    }
+
     const w = window.innerWidth
+
     if (w < 768) return 'mobile' as const
     if (w <= 1024) return 'tablet' as const
-    /* Large tablets (iPad Pro 11" 834×1194, 13" 1032×1376, landscape
-       up to ~1400px): treat touch/coarse-pointer devices as tablets
-       so they get the scaled layout instead of the 430px desktop
-       letterbox. Fine-pointer laptops/desktops stay desktop. */
+
     if (w <= 1400) {
-      const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false
+      const coarse =
+        window.matchMedia?.('(pointer: coarse)').matches ?? false
+
       if (coarse) return 'tablet' as const
     }
+
     return 'desktop' as const
   }
+
   const [bp, setBp] = useState<'mobile' | 'tablet' | 'desktop'>(get)
+
   useEffect(() => {
     const onResize = () => setBp(get())
+
     window.addEventListener('resize', onResize)
     window.addEventListener('orientationchange', onResize)
+
     return () => {
       window.removeEventListener('resize', onResize)
       window.removeEventListener('orientationchange', onResize)
     }
   }, [])
+
   return bp
 }
 
@@ -133,15 +151,11 @@ export default function App() {
      NOTE: coarse-pointer changes don't re-fire resize on some iPads,
      so also listen to the media query itself (see effect below). */
   const tabletScale = (() => {
-    if (typeof window === 'undefined') return 1.79
-    const w = window.innerWidth
-    const s = w / 430
-    /* Edge-to-edge up to ~1118px viewport (covers 768→1032 portrait
-       incl. iPad Pro 13" 1032×1376). Beyond that (large landscape,
-       e.g. 1376w) cap at 2.6 so cards/text stay usable — the frame
-       then centers with small balanced margins via margin:auto. */
-    return Math.min(2.6, Math.max(1.78, s))
-  })()
+  if (typeof window === 'undefined') return 1
+
+  const w = window.innerWidth
+  return Math.max(1, w / 430)
+})()
   /* Keep two decimals for the CSS var; the inline zoom gets full float. */
   const tabletScaleCss = tabletScale.toFixed(2)
 
