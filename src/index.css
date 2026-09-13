@@ -190,3 +190,85 @@ body {
 ::-webkit-scrollbar { width: 2px; height: 2px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 2px; }
+
+/* ── Responsive app shell (mobile / tablet / desktop) ───────
+   Mobile  (<768px)  : 430px centered column (default, unchanged)
+   Tablet  (768–1024): SAME 430px phone design, uniformly magnified
+     via `zoom` on .fp-frame--tablet (set inline from App.tsx) with
+     scale = viewportWidth / 430, so the painted app is EXACTLY the
+     viewport width — zero left/right gaps, like a native tablet app.
+     768w→1.79 / 820w→1.91 / 900w→2.09 / 1024w→2.38.
+     Cards, buttons, text, icons, spacing + nav all grow together —
+     nothing is independently stretched or restyled.
+   Desktop (>1024px) : 430px centered column (default, unchanged)
+   Only the tablet range gets overrides; mobile + desktop keep
+   their exact existing behavior. Transitions keep breakpoint
+   changes smooth. ─────────────────────────────────────────── */
+.fp-shell,
+.fp-frame {
+  transition: max-width 300ms ease-in-out, width 300ms ease-in-out,
+    padding-left 300ms ease-in-out, padding-right 300ms ease-in-out;
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .fp-shell--tablet {
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+  }
+  .fp-frame--tablet {
+    /* Keep the phone column's own metrics; the inline `zoom`
+       (viewportWidth / 430) enlarges the painted output to EXACTLY
+       the viewport width — no side gaps at all. Zero margins keep
+       it pinned edge-to-edge like a native tablet app.
+       --fp-zoom (set inline) drives the dvh compensation below;
+       fallback 2 keeps the declaration valid if unset. */
+    width: 430px !important;
+    max-width: 430px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    flex-shrink: 0;
+    transform-origin: top left;
+    min-height: 0;
+  }
+  /* Height compensation: descendants size themselves in 100dvh units
+     which resolve against the REAL viewport even under zoom — so each
+     100dvh-tall screen would paint z× too tall and clip the bottom
+     nav. Dividing the layout heights by --fp-zoom makes the painted
+     result exactly one viewport again. Beats the inline 100dvh styles
+     only inside 768–1024px; mobile/desktop fall outside this query.
+     The inner-scroll rows are `calc(100dvh - Npx)` in layout px where
+     N is an extraPadding offset (88 + N, normally plain 88), so keep
+     the subtraction verbatim — only the 100dvh term is divided. */
+  .fp-frame--tablet,
+  .fp-frame--tablet > div[style*="100dvh"] {
+    height: calc(100dvh / var(--fp-zoom, 2)) !important;
+  }
+  /* innerScroll() variants — attribute selectors match the exact
+     serialized subtraction so no per-screen JS change is needed. */
+  .fp-frame--tablet > div > div[style*="calc(100dvh - 88px)"],
+  .fp-frame--tablet > div > div[style*="calc(100dvh - 96px)"],
+  .fp-frame--tablet > div > div[style*="calc(100dvh - 100px)"],
+  .fp-frame--tablet > div > div[style*="calc(100dvh - 104px)"],
+  .fp-frame--tablet > div > div[style*="calc(100dvh - 112px)"] {
+    height: calc((100dvh / var(--fp-zoom, 2)) - 88px) !important;
+  }
+  /* Tablet modal: FitModal renders INSIDE the zoomed frame subtree,
+     so it already magnifies proportionally with everything else —
+     no extra zoom here (it would compound). Just keep the sheet at
+     phone proportions and centered, like the rest of the app. */
+  .fp-modal-wrap {
+    align-items: center !important;
+    padding: 0 24px !important;
+  }
+  .fp-modal {
+    max-width: 430px !important;
+    width: min(430px, calc(100vw - 48px)) !important;
+    border-radius: 28px !important;
+    max-height: 86vh !important;
+  }
+}
+
+@media (max-width: 767px), (min-width: 1025px) {
+  /* Explicit no-op guard: mobile + desktop keep legacy layout. */
+  .fp-shell { justify-content: center; }
+}

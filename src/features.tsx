@@ -29,7 +29,7 @@ const SOFT = 'var(--fp-field)'
 const BG = 'var(--fp-bg)'
 
 /* ── Surface style helpers (mirror screens.tsx aesthetic) ── */
-const gl = (blur = 22, r = 18) => ({
+const gl = (blur = 22, r = 18, _extra?: number) => ({
   background: 'var(--fp-glass)',
   borderRadius: r,
   backdropFilter: `blur(${blur}px)`,
@@ -91,9 +91,50 @@ export function useIsDesktop() {
   return d
 }
 
+/* ── Dedicated tablet breakpoint (768–1024px) ───────────────
+   Mobile  : < 768px  | Tablet: 768–1024px | Desktop: > 1024px
+   Kept separate from useIsDesktop() so existing mobile/desktop
+   behavior stays byte-for-byte identical. ─────────────────── */
+export function useBreakpoint(): 'mobile' | 'tablet' | 'desktop' {
+  const get = (): 'mobile' | 'tablet' | 'desktop' => {
+    if (typeof window === 'undefined') return 'mobile'
+    const w = window.innerWidth
+    if (w >= 768 && w <= 1024) return 'tablet'
+    if (w > 1024) return 'desktop'
+    return 'mobile'
+  }
+  const [bp, setBp] = useState<'mobile' | 'tablet' | 'desktop'>(get)
+  useEffect(() => {
+    const onResize = () => setBp(get())
+    window.addEventListener('resize', onResize)
+    window.addEventListener('orientationchange', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('orientationchange', onResize)
+    }
+  }, [])
+  return bp
+}
+
+export function useIsTablet() {
+  const [t, setT] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px) and (max-width: 1024px)').matches
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px) and (max-width: 1024px)')
+    const fn = () => setT(mq.matches)
+    mq.addEventListener('change', fn)
+    return () => mq.removeEventListener('change', fn)
+  }, [])
+  return t
+}
+
 /* ── Shared modal / bottom-sheet ───────────────────────────────
    Desktop → centered glassmorphic sheet
-   Mobile  → bottom-anchored sliding sheet (task #11) ────────── */
+   Mobile  → bottom-anchored sliding sheet (task #11)
+   Tablet (768–1024px) → handled purely via the .fp-modal CSS class
+   in index.css (wider centered sheet, no JS branch change so
+   mobile/desktop rendering stays identical). ──────────────── */
 export interface FitModalProps {
   open: boolean
   onClose: () => void
@@ -107,9 +148,10 @@ export function FitModal({ open, onClose, title, subtitle, children }: FitModalP
   return (
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.45)' }} />
-      <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: desktop ? 'center' : 'flex-end', justifyContent: 'center' }}>
+      <div className="fp-modal-wrap" style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: desktop ? 'center' : 'flex-end', justifyContent: 'center' }}>
         <div
           onClick={e => e.stopPropagation()}
+          className="fp-modal"
           style={{
             ...card(),
             width: '100%', maxWidth: desktop ? 420 : 430,
@@ -132,11 +174,11 @@ export function FitModal({ open, onClose, title, subtitle, children }: FitModalP
 }
 
 /* ── Gradient primary button ── */
-export function GBtn({ children, onClick, style, variant = 'solid' }: { children: React.ReactNode; onClick?: () => void; style?: any; variant?: 'solid' | 'outline' | 'ghost' }) {
+export function GBtn({ children, onClick, style, variant = 'solid', disabled }: { children: React.ReactNode; onClick?: () => void; style?: any; variant?: 'solid' | 'outline' | 'ghost'; disabled?: boolean }) {
   const base = { fontFamily: FF, fontWeight: 700, borderRadius: 14, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'transform 120ms, box-shadow 120ms', width: '100%' }
-  if (variant === 'solid') return <button onClick={onClick} style={{ ...base, ...(style || {}), background: `linear-gradient(135deg,${G},${CYAN})`, color: '#fff', border: 'none', boxShadow: `0 8px 22px ${G}30` }}>{children}</button>
-  if (variant === 'outline') return <button onClick={onClick} style={{ ...base, ...(style || {}), background: 'transparent', color: TXT, border: `1px solid ${BORDER}` }}>{children}</button>
-  return <button onClick={onClick} style={{ ...base, ...(style || {}), background: 'none', border: 'none', color: MUTED }}>{children}</button>
+  if (variant === 'solid') return <button onClick={onClick} disabled={disabled} style={{ ...base, ...(style || {}), background: `linear-gradient(135deg,${G},${CYAN})`, color: '#fff', border: 'none', boxShadow: `0 8px 22px ${G}30` }}>{children}</button>
+  if (variant === 'outline') return <button onClick={onClick} disabled={disabled} style={{ ...base, ...(style || {}), background: 'transparent', color: TXT, border: `1px solid ${BORDER}` }}>{children}</button>
+  return <button onClick={onClick} disabled={disabled} style={{ ...base, ...(style || {}), background: 'none', border: 'none', color: MUTED }}>{children}</button>
 }
 
 /* ── Spinner (CSS animation: spin) ── */
