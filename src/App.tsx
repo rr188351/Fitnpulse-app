@@ -19,16 +19,27 @@ import {
 
 /* ── Responsive breakpoints (mobile / tablet / desktop) ─────
    Mobile : < 768px    → existing 430px column layout (unchanged)
-   Tablet : 768–1024px → same 430px phone design, uniformly scaled
-                          up via zoom (centered, no stretch)
-   Desktop: > 1024px   → existing 430px centered column (unchanged) */
+   Tablet : 768–1024px (any pointer) + 1025–1400px on touch/coarse
+            devices (large tablets like iPad Pro 11"/13") →
+            same 430px phone design, uniformly scaled up via zoom
+            edge-to-edge (no side gaps, no stretch)
+   Desktop: > 1024px on fine-pointer devices, or > 1400px →
+            existing 430px centered column (unchanged) */
 function useBreakpoint(): 'mobile' | 'tablet' | 'desktop' {
   const get = () => {
     if (typeof window === 'undefined') return 'mobile' as const
     const w = window.innerWidth
-    if (w >= 768 && w <= 1024) return 'tablet' as const
-    if (w > 1024) return 'desktop' as const
-    return 'mobile' as const
+    if (w < 768) return 'mobile' as const
+    if (w <= 1024) return 'tablet' as const
+    /* Large tablets (iPad Pro 11" 834×1194, 13" 1032×1376, landscape
+       up to ~1400px): treat touch/coarse-pointer devices as tablets
+       so they get the scaled layout instead of the 430px desktop
+       letterbox. Fine-pointer laptops/desktops stay desktop. */
+    if (w <= 1400) {
+      const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false
+      if (coarse) return 'tablet' as const
+    }
+    return 'desktop' as const
   }
   const [bp, setBp] = useState<'mobile' | 'tablet' | 'desktop'>(get)
   useEffect(() => {
@@ -113,17 +124,45 @@ export default function App() {
   /* Tablet scale: fill the tablet viewport edge-to-edge with the
      unchanged 430px phone design, uniformly magnified.
      scale = viewportWidth / 430 → painted width = viewport width.
-     768w → 1.79, 820w → 1.91, 900w → 2.09, 1024w → 2.38.
+     768w → 1.79, 820w → 1.91, 900w → 2.09, 1024w → 2.38,
+     1032w (iPad Pro 13" portrait) → 2.40 edge-to-edge; wider
+     landscape (e.g. 1194w/1376w) caps at 2.6 and centers with
+     slim balanced margins so text/cards stay usable.
      Cards/text/icons/spacing/nav all grow together — zero side gaps,
-     zero stretch. Mobile/desktop ignore this entirely. */
+     zero stretch. Mobile/desktop ignore this entirely.
+     NOTE: coarse-pointer changes don't re-fire resize on some iPads,
+     so also listen to the media query itself (see effect below). */
   const tabletScale = (() => {
     if (typeof window === 'undefined') return 1.79
     const w = window.innerWidth
     const s = w / 430
-    return Math.min(2.4, Math.max(1.78, s))
+    /* Edge-to-edge up to ~1118px viewport (covers 768→1032 portrait
+       incl. iPad Pro 13" 1032×1376). Beyond that (large landscape,
+       e.g. 1376w) cap at 2.6 so cards/text stay usable — the frame
+       then centers with small balanced margins via margin:auto. */
+    return Math.min(2.6, Math.max(1.78, s))
   })()
   /* Keep two decimals for the CSS var; the inline zoom gets full float. */
   const tabletScaleCss = tabletScale.toFixed(2)
+
+  /* Re-evaluate breakpoint + scale when the coarse-pointer match
+     changes (iPadOS docked keyboard / stage manager) and on every
+     resize/orientation change. A state tick forces recompute since
+     tabletScale derives from window.innerWidth each render. */
+  const [, setTabletTick] = useState(0)
+  useEffect(() => {
+    if (!isTablet) return
+    const onChange = () => setTabletTick(t => t + 1)
+    window.addEventListener('resize', onChange)
+    window.addEventListener('orientationchange', onChange)
+    const mq = window.matchMedia?.('(pointer: coarse)')
+    mq?.addEventListener?.('change', onChange)
+    return () => {
+      window.removeEventListener('resize', onChange)
+      window.removeEventListener('orientationchange', onChange)
+      mq?.removeEventListener?.('change', onChange)
+    }
+  }, [isTablet])
 
   return (
     /* App shell — mobile/desktop keep the 430px column exactly.
@@ -138,7 +177,7 @@ export default function App() {
         overflow: 'hidden',
         background: 'var(--fp-bg)',
         display: 'flex',
-        justifyContent: isTablet ? 'flex-start' : 'center',
+        justifyContent: 'center',
         alignItems: 'flex-start',
         transition: 'background 300ms ease',
       }}

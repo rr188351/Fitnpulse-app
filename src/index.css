@@ -193,14 +193,18 @@ body {
 
 /* ── Responsive app shell (mobile / tablet / desktop) ───────
    Mobile  (<768px)  : 430px centered column (default, unchanged)
-   Tablet  (768–1024): SAME 430px phone design, uniformly magnified
-     via `zoom` on .fp-frame--tablet (set inline from App.tsx) with
-     scale = viewportWidth / 430, so the painted app is EXACTLY the
-     viewport width — zero left/right gaps, like a native tablet app.
-     768w→1.79 / 820w→1.91 / 900w→2.09 / 1024w→2.38.
-     Cards, buttons, text, icons, spacing + nav all grow together —
-     nothing is independently stretched or restyled.
-   Desktop (>1024px) : 430px centered column (default, unchanged)
+   Tablet  : 768–1024px any pointer, PLUS 1025–1400px on
+     coarse-pointer (touch) devices — iPad Pro 11" (834×1194),
+     iPad Pro 13" (1032×1376) incl. landscape. SAME 430px phone
+     design, uniformly magnified via `zoom` (inline from App.tsx,
+     scale = viewportWidth / 430) so the painted app is EXACTLY
+     the viewport width — zero left/right gaps.
+     768w→1.79 / 820w→1.91 / 900w→2.09 / 1024w→2.38 /
+     1032w→2.40 edge-to-edge; wider landscape caps at 2.6 and
+     centers with slim balanced margins. Cards, buttons, text, icons,
+     spacing + nav all grow together — nothing stretched.
+   Desktop : >1024px fine-pointer, or anything >1400px →
+     430px centered column (unchanged)
    Only the tablet range gets overrides; mobile + desktop keep
    their exact existing behavior. Transitions keep breakpoint
    changes smooth. ─────────────────────────────────────────── */
@@ -210,24 +214,26 @@ body {
     padding-left 300ms ease-in-out, padding-right 300ms ease-in-out;
 }
 
-@media (min-width: 768px) and (max-width: 1024px) {
+@media (min-width: 768px) and (max-width: 1024px),
+       (min-width: 1025px) and (max-width: 1400px) and (pointer: coarse) {
   .fp-shell--tablet {
-    justify-content: flex-start !important;
+    justify-content: center !important;
     align-items: flex-start !important;
   }
   .fp-frame--tablet {
     /* Keep the phone column's own metrics; the inline `zoom`
-       (viewportWidth / 430) enlarges the painted output to EXACTLY
-       the viewport width — no side gaps at all. Zero margins keep
-       it pinned edge-to-edge like a native tablet app.
+       (viewportWidth / 430, capped at 2.6) enlarges the painted
+       output edge-to-edge up to ~1118px viewport. On very wide
+       tablet landscape (beyond) it centers with slim balanced
+       margins instead of overscaling — still no letterbox.
        --fp-zoom (set inline) drives the dvh compensation below;
        fallback 2 keeps the declaration valid if unset. */
     width: 430px !important;
     max-width: 430px !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     flex-shrink: 0;
-    transform-origin: top left;
+    transform-origin: top center;
     min-height: 0;
   }
   /* Height compensation: descendants size themselves in 100dvh units
@@ -268,7 +274,10 @@ body {
   }
 }
 
-@media (max-width: 767px), (min-width: 1025px) {
-  /* Explicit no-op guard: mobile + desktop keep legacy layout. */
+@media (max-width: 767px), (min-width: 1025px) and (pointer: fine), (min-width: 1401px) {
+  /* Explicit no-op guard: mobile + desktop keep legacy layout.
+     NOTE: 1025–1400px coarse-pointer tablets are styled tablet — see
+     the query above — so exclude (pointer: fine) here so desktops
+     keep legacy centering without fighting the tablet rules. */
   .fp-shell { justify-content: center; }
 }

@@ -91,26 +91,33 @@ export function useIsDesktop() {
   return d
 }
 
-/* ── Dedicated tablet breakpoint (768–1024px) ───────────────
-   Mobile  : < 768px  | Tablet: 768–1024px | Desktop: > 1024px
+/* ── Dedicated tablet breakpoint ──────────────────────────────
+   Mobile  : < 768px
+   Tablet  : 768–1024px any pointer + 1025–1400px coarse-pointer
+             (large tablets: iPad Pro 11"/13", landscape)
+   Desktop : > 1024px fine-pointer, or > 1400px
    Kept separate from useIsDesktop() so existing mobile/desktop
    behavior stays byte-for-byte identical. ─────────────────── */
 export function useBreakpoint(): 'mobile' | 'tablet' | 'desktop' {
   const get = (): 'mobile' | 'tablet' | 'desktop' => {
     if (typeof window === 'undefined') return 'mobile'
     const w = window.innerWidth
-    if (w >= 768 && w <= 1024) return 'tablet'
-    if (w > 1024) return 'desktop'
-    return 'mobile'
+    if (w < 768) return 'mobile'
+    if (w <= 1024) return 'tablet'
+    if (w <= 1400 && (window.matchMedia?.('(pointer: coarse)').matches ?? false)) return 'tablet'
+    return 'desktop'
   }
   const [bp, setBp] = useState<'mobile' | 'tablet' | 'desktop'>(get)
   useEffect(() => {
     const onResize = () => setBp(get())
     window.addEventListener('resize', onResize)
     window.addEventListener('orientationchange', onResize)
+    const mq = window.matchMedia?.('(pointer: coarse)')
+    mq?.addEventListener?.('change', onResize)
     return () => {
       window.removeEventListener('resize', onResize)
       window.removeEventListener('orientationchange', onResize)
+      mq?.removeEventListener?.('change', onResize)
     }
   }, [])
   return bp
@@ -118,13 +125,21 @@ export function useBreakpoint(): 'mobile' | 'tablet' | 'desktop' {
 
 export function useIsTablet() {
   const [t, setT] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px) and (max-width: 1024px)').matches
+    () =>
+      typeof window !== 'undefined' &&
+      (window.matchMedia('(min-width: 768px) and (max-width: 1024px)').matches ||
+        (window.matchMedia('(min-width: 1025px) and (max-width: 1400px) and (pointer: coarse)').matches ?? false))
   )
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px) and (max-width: 1024px)')
-    const fn = () => setT(mq.matches)
-    mq.addEventListener('change', fn)
-    return () => mq.removeEventListener('change', fn)
+    const mq1 = window.matchMedia('(min-width: 768px) and (max-width: 1024px)')
+    const mq2 = window.matchMedia('(min-width: 1025px) and (max-width: 1400px) and (pointer: coarse)')
+    const fn = () => setT(mq1.matches || mq2.matches)
+    mq1.addEventListener('change', fn)
+    mq2.addEventListener('change', fn)
+    return () => {
+      mq1.removeEventListener('change', fn)
+      mq2.removeEventListener('change', fn)
+    }
   }, [])
   return t
 }
