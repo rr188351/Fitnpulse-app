@@ -9,7 +9,11 @@ body {
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #06080f;
+  /* Painted before React mounts and used for any area outside the app
+     shell: follow the active theme (the dark navy fallback is only used
+     if the tokens are missing), so light mode never bleeds a dark
+     background behind the glass surfaces. */
+  background: var(--fp-bg, #06080f);
 }
 
 @keyframes spin {
@@ -47,6 +51,50 @@ body {
   --fp-bg: linear-gradient(145deg,#f0fdf4 0%,#dcfce7 16%,#cffafe 42%,#e0f2fe 60%,#faf5ff 82%,#fdf4ff 100%);
   --fp-glass: rgba(255,255,255,0.72);
   --fp-glass-2: rgba(255,255,255,0.8);
+  --fp-nav: rgba(255,255,255,0.6);
+  /* Web-only "premium glass" surfaces — mobile keeps --fp-glass/--fp-nav,
+     so the phone app is untouched while the web app can go full glass.
+     Light theme runs very transparent so the aurora shows through. */
+  --fp-web-glass: rgba(255, 255, 255, 0.28);
+  --fp-web-glass-2: rgba(255, 255, 255, 0.42);
+  /* ── LEFT NAV RAIL (sidebar) + TOP BAR GLASS KNOBS ──────────
+     These are the ONLY numbers you need to touch to control how
+     see-through the web nav bar is (collapsed and expanded states
+     both use them — collapsing only changes the rail width):
+
+       --fp-web-nav-alpha     : the TOP BAR behind-the-scenes alpha
+                                0 = fully transparent (pure aurora glass)
+                                0.55 = default (frosted, text stays crisp)
+                                1 = solid, no glass at all
+       --fp-web-sidebar-alpha : the LEFT RAIL. Defaults to the value
+                                above; raise it to hide the background
+                                gradient behind the rail, lower it to let
+                                the aurora show through.
+       --fp-web-nav-blur      : frosted blur in px — raise it for a
+                                milkier "premium glass", lower it to see
+                                more of the gradient moving behind.
+       --fp-web-nav-sheen     : bright highlight band along the top edge.
+
+     Light mode runs a higher alpha than dark mode because the page
+     gradient behind the glass is brighter and more colourful here. */
+  --fp-web-nav-alpha: 0.55;
+  /* The rail sits right on top of the strongest aurora glow, so it runs
+     more solid than the top bar by default: bright frosted glass, no
+     dark-green cast. Drop it towards 0.35 for a lot more see-through. */
+  --fp-web-sidebar-alpha: 0.68;
+  --fp-web-nav-blur: 46px;
+  --fp-web-nav-sheen: rgba(255, 255, 255, 0.9);
+  --fp-web-nav: rgba(255, 255, 255, var(--fp-web-nav-alpha));
+  --fp-web-sidebar: rgba(255, 255, 255, var(--fp-web-sidebar-alpha));
+  --fp-web-sheen: rgba(255, 255, 255, 0.85);
+  --fp-web-edge: rgba(255, 255, 255, 0.95);
+  --fp-web-inner: rgba(255, 255, 255, 0.7);
+  /* Overlay surfaces (popovers / modals / sheets) sit ON TOP of live
+     content, so they never use the airy page glass: light mode gets a
+     near-solid frosted backdrop + a tinted scrim that blurs the page
+     behind — the same technique that already fixed dark mode. */
+  --fp-web-overlay: rgba(255, 255, 255, 0.93);
+  --fp-web-overlay-scrim: rgba(241, 245, 249, 0.55);
   --fp-track: #F3F4F6;
   --fp-field: #E5E7EB;
   --fp-border: rgba(15,23,42,0.09);
@@ -67,27 +115,55 @@ body {
   --fp-red: #DC2626;
   --fp-purple: #7C3AED;
   --fp-pink: #DB2777;
-  --fp-glow: rgba(22,163,74,0.28);
-  --fp-glow-2: rgba(8,145,178,0.22);
-  --fp-glow-3: rgba(124,58,237,0.14);
+  /* Aurora strength behind the glass. Kept gentle in light mode so the
+     page gradient never reads as a dark / patchy backdrop under the
+     translucent nav bar. Raise for a punchier look, lower to flatten. */
+  --fp-glow: rgba(22,163,74,0.20);
+  --fp-glow-2: rgba(8,145,178,0.16);
+  --fp-glow-3: rgba(124,58,237,0.10);
 }
 :root[data-theme='dark'] {
   --fp-bg: linear-gradient(145deg,#05070d 0%,#0a111d 45%,#06080f 100%);
-  --fp-glass: rgba(255,255,255,0.055);
-  --fp-glass-2: rgba(255,255,255,0.075);
-  --fp-track: rgba(255,255,255,0.1);
-  --fp-field: rgba(255,255,255,0.09);
-  --fp-border: rgba(255,255,255,0.09);
-  --fp-border-strong: rgba(255,255,255,0.16);
-  --fp-input-bg: rgba(255,255,255,0.05);
+  /* Dark-mode surfaces: the previous 5–8% white overlays sat straight on
+     the animated gradient, so every card / sub-screen read as a
+     transparent overlay and content was hard to read. Dark surfaces are
+     now solid-dark with a touch of translucency + backdrop blur.
+     Light theme keeps its airy translucent whites. */
+  --fp-glass: rgba(19, 27, 41, 0.88);
+  --fp-glass-2: rgba(26, 35, 52, 0.94);
+  /* Navigation chrome stays a genuine frosted glass in both themes
+     (same language as the phone app's bars), while content cards keep
+     the more opaque surface that fixes dark-mode readability. */
+  --fp-nav: rgba(17, 24, 38, 0.68);
+  --fp-web-glass: rgba(16, 24, 40, 0.58);
+  --fp-web-glass-2: rgba(23, 34, 53, 0.66);
+  /* Same nav-bar glass knobs as light mode (see the note in the light
+     block above). The left rail defaults to the top-bar value, so dark
+     mode looks exactly as it did before — tune only if you want to. */
+  --fp-web-nav-alpha: 0.52;
+  --fp-web-sidebar-alpha: var(--fp-web-nav-alpha);
+  --fp-web-nav-blur: 46px;
+  --fp-web-nav-sheen: rgba(255, 255, 255, 0.14);
+  --fp-web-nav: rgba(9, 14, 24, var(--fp-web-nav-alpha));
+  --fp-web-sidebar: rgba(9, 14, 24, var(--fp-web-sidebar-alpha));
+  --fp-web-sheen: rgba(255, 255, 255, 0.14);
+  --fp-web-edge: rgba(255, 255, 255, 0.2);
+  --fp-web-inner: rgba(255, 255, 255, 0.08);
+  --fp-web-overlay: rgba(17, 26, 43, 0.94);
+  --fp-web-overlay-scrim: rgba(2, 6, 14, 0.6);
+  --fp-track: rgba(255,255,255,0.08);
+  --fp-field: rgba(255,255,255,0.12);
+  --fp-border: rgba(255,255,255,0.10);
+  --fp-border-strong: rgba(255,255,255,0.18);
+  --fp-input-bg: rgba(255,255,255,0.06);
   --fp-faint: rgba(255,255,255,0.35);
   --fp-surface: #E8EEF7;
   --fp-text: #E8EEF7;
   --fp-text-2: #C2CFE0;
   --fp-muted: #7E8CA3;
   --fp-lighter: rgba(255,255,255,0.35);
-  --fp-shadow: rgba(0,0,0,0.25);
-  --fp-shadow-soft: rgba(0,0,0,0.15);
+  --fp-shadow: rgba(0,0,0,0.45);
+  --fp-shadow-soft: rgba(0,0,0,0.28);
   --fp-accent: #34D399;
   --fp-accent-2: #22D3EE;
   --fp-lime: #A3E635;
@@ -279,4 +355,2508 @@ body {
      the query above — so exclude (pointer: fine) here so desktops
      keep legacy centering without fighting the tablet rules. */
   .fp-shell { justify-content: center; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   FITPULSE WEB SHELL — desktop / tablet application chrome
+   Used only by the web app (src/weblayout.tsx + src/webscreens.tsx).
+   The mobile layout and the embedded (/?embed=1 / 3D showcase)
+   presentation never render these classes, so everything below is
+   additive: it cannot affect the existing phone layouts.
+   All colours come from the light/dark theme tokens above.
+   ════════════════════════════════════════════════════════════ */
+.fp-web {
+  position: relative;
+  display: flex;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--fp-bg);
+  color: var(--fp-text);
+  font-family: 'Outfit', sans-serif;
+  transition: background 300ms ease;
+}
+.fp-web__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+.fp-web__glow--a {
+  top: -16%;
+  right: -4%;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, var(--fp-glow), transparent 70%);
+}
+.fp-web__glow--b {
+  bottom: -20%;
+  left: 6%;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, var(--fp-glow-2), transparent 70%);
+}
+
+/* ── Sidebar navigation ─────────────────────────────────── */
+.fp-web__sidebar {
+  position: relative;
+  z-index: 3;
+  flex: 0 0 264px;
+  width: 264px;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 16px 18px;
+  /* Left rail glass — alpha/blur come from the theme knobs
+     (--fp-web-sidebar-alpha / --fp-web-nav-blur) so there is one dial. */
+  background: var(--fp-web-sidebar);
+  backdrop-filter: blur(var(--fp-web-nav-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--fp-web-nav-blur)) saturate(160%);
+  border-right: 1px solid var(--fp-border-strong);
+  transition: width 220ms ease-in-out, flex-basis 220ms ease-in-out, padding 220ms ease-in-out;
+}
+.fp-web__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 6px 20px;
+}
+.fp-web__brand-name {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--fp-text);
+  line-height: 1.2;
+}
+.fp-web__brand-tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--fp-muted);
+  letter-spacing: 0.3px;
+}
+.fp-web__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fp-web__nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 13px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: var(--fp-muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms, color 160ms, border-color 160ms, transform 160ms;
+}
+.fp-web__nav-item:hover {
+  background: var(--fp-glass);
+  color: var(--fp-text);
+  transform: translateX(2px);
+}
+.fp-web__nav-item.is-active {
+  color: var(--fp-accent);
+  background: var(--fp-glass);
+  border-color: var(--fp-border-strong);
+  box-shadow: 0 8px 22px var(--fp-shadow-soft);
+}
+.fp-web__nav-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--fp-accent), var(--fp-accent-2));
+}
+.fp-web__nav-ico { font-size: 19px; line-height: 1; }
+.fp-web__side-foot {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--fp-track);
+}
+.fp-web__streak {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 13px;
+  border-radius: 13px;
+  background: var(--fp-glass);
+  border: 1px solid var(--fp-border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fp-text-2);
+}
+.fp-web__streak-ico { font-size: 16px; }
+
+/* ── Collapsed sidebar (icon rail) ──────────────────────────
+   Toggled from the topbar button at every width, so the navigation
+   can always be collapsed / expanded like a real web app. */
+.fp-web--collapsed .fp-web__sidebar {
+  flex-basis: 84px;
+  width: 84px;
+  padding: 22px 12px 18px;
+}
+.fp-web--collapsed .fp-web__label { display: none; }
+.fp-web--collapsed .fp-web__brand { justify-content: center; padding: 4px 0 20px; }
+.fp-web--collapsed .fp-web__nav-item { justify-content: center; padding: 13px 0; }
+.fp-web--collapsed .fp-web__nav-item:hover { transform: none; }
+.fp-web--collapsed .fp-web__nav-ico { font-size: 21px; }
+.fp-web--collapsed .fp-web__nav-item.is-active::before { display: none; }
+.fp-web--collapsed .fp-web__streak { justify-content: center; padding: 11px 0; }
+.fp-web--collapsed .fp-web__streak-ico { font-size: 17px; }
+
+/* ── Top bar ────────────────────────────────────────────── */
+.fp-web__main {
+  position: relative;
+  z-index: 2;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.fp-web__topbar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 28px;
+  background: var(--fp-web-nav);
+  backdrop-filter: blur(var(--fp-web-nav-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--fp-web-nav-blur)) saturate(160%);
+  border-bottom: 1px solid var(--fp-border-strong);
+  box-shadow: 0 10px 30px var(--fp-shadow-soft);
+}
+.fp-web__menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 13px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border-strong);
+  color: var(--fp-text);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 150ms, box-shadow 150ms, border-color 150ms;
+}
+.fp-web__menu-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px var(--fp-shadow-soft);
+}
+.fp-web__titles { flex: 1 1 auto; min-width: 0; }
+.fp-web__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--fp-text);
+  line-height: 1.2;
+}
+.fp-web__subtitle {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--fp-muted);
+}
+.fp-web__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.fp-web__icon-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border);
+  font-size: 17px;
+  cursor: pointer;
+  transition: transform 150ms, border-color 150ms, box-shadow 150ms;
+}
+.fp-web__icon-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--fp-border-strong);
+  box-shadow: 0 8px 18px var(--fp-shadow-soft);
+}
+.fp-web__badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--fp-red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--fp-glass-2);
+}
+.fp-web__user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 13px 5px 5px;
+  border-radius: 999px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border);
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: transform 150ms, border-color 150ms, box-shadow 150ms;
+}
+.fp-web__user:hover {
+  transform: translateY(-1px);
+  border-color: var(--fp-border-strong);
+  box-shadow: 0 8px 18px var(--fp-shadow-soft);
+}
+.fp-web__user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  background: linear-gradient(135deg, var(--fp-accent), var(--fp-accent-2));
+}
+.fp-web__user-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--fp-text);
+}
+
+/* ── Buttons ────────────────────────────────────────────── */
+.fp-web__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 13px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border-strong);
+  color: var(--fp-text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 150ms, box-shadow 150ms, border-color 150ms;
+}
+.fp-web__btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px var(--fp-shadow-soft);
+}
+.fp-web__btn--primary {
+  background: linear-gradient(135deg, var(--fp-accent), var(--fp-accent-2));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 10px 24px var(--fp-glow);
+}
+.fp-web__btn-plus { font-size: 16px; line-height: 1; }
+
+/* ── Topbar popovers (notifications / quick log) ─────────── */
+.fp-web__pop-host { position: relative; }
+.fp-web__pop-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+.fp-web__pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 21;
+  min-width: 210px;
+  padding: 8px;
+  border-radius: 18px;
+  background: var(--fp-glass-2);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+  border: 1px solid var(--fp-border-strong);
+  box-shadow: 0 20px 50px var(--fp-shadow);
+  animation: modal-pop 260ms cubic-bezier(0.22, 0.9, 0.35, 1) both;
+}
+.fp-web__pop--wide { width: 380px; max-width: calc(100vw - 40px); }
+.fp-web__pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px 12px;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--fp-text);
+}
+.fp-web__pop-clear {
+  background: none;
+  border: none;
+  color: var(--fp-muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fp-web__pop-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: none;
+  border: none;
+  color: var(--fp-text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms;
+}
+.fp-web__pop-item:hover { background: var(--fp-glass); }
+.fp-web__pop-ico { font-size: 17px; }
+.fp-web__pop-label { flex: 1; }
+.fp-web__notif {
+  display: flex;
+  gap: 11px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--fp-track);
+}
+.fp-web__notif-ico {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.fp-web__notif-body { flex: 1; min-width: 0; }
+.fp-web__notif-title { font-size: 13px; font-weight: 700; color: var(--fp-text); }
+.fp-web__notif-msg { font-size: 11.5px; color: var(--fp-muted); line-height: 1.45; margin-top: 2px; }
+.fp-web__notif-time { font-size: 10.5px; color: var(--fp-muted); font-weight: 600; flex: 0 0 auto; }
+.fp-web__pop-all {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 0;
+  border-radius: 12px;
+  background: var(--fp-glass);
+  border: 1px solid var(--fp-border-strong);
+  color: var(--fp-accent);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── Scrollable page content + dashboard grid ───────────── */
+.fp-web__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px 28px 48px;
+}
+.fp-web__content::-webkit-scrollbar { width: 10px; height: 10px; }
+.fp-web__content::-webkit-scrollbar-thumb {
+  background: var(--fp-border-strong);
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.fp-web__grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 1520px;
+  margin: 0 auto;
+  animation: fade-slide-up 320ms ease-out both;
+}
+.fp-web__w--3 { grid-column: span 3; min-width: 0; }
+.fp-web__w--4 { grid-column: span 4; min-width: 0; }
+.fp-web__w--5 { grid-column: span 5; min-width: 0; }
+.fp-web__w--6 { grid-column: span 6; min-width: 0; }
+.fp-web__w--7 { grid-column: span 7; min-width: 0; }
+.fp-web__w--8 { grid-column: span 8; min-width: 0; }
+.fp-web__w--12 { grid-column: span 12; min-width: 0; }
+.fp-stack { display: flex; flex-direction: column; gap: 20px; }
+.fp-pagehead {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.fp-pagehead > :first-child { margin-right: auto; }
+.fp-pagehead > :only-child { margin-right: 0; margin-left: auto; }
+.fp-section-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--fp-text);
+  letter-spacing: -0.1px;
+  margin: -4px 0 -6px;
+}
+
+/* ── Dashboard cards ────────────────────────────────────── */
+.fp-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 22px;
+  border-radius: 22px;
+  background: var(--fp-glass);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid var(--fp-border-strong);
+  box-shadow: 0 12px 34px var(--fp-shadow);
+  transition: border-color 200ms, box-shadow 200ms, transform 200ms;
+}
+.fp-card:hover {
+  border-color: var(--fp-border-strong);
+  box-shadow: 0 18px 44px var(--fp-shadow);
+}
+.fp-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.fp-card__heading { min-width: 0; }
+.fp-card__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fp-text);
+  line-height: 1.3;
+}
+.fp-card__sub {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--fp-muted);
+  line-height: 1.5;
+}
+.fp-card__sub--block { margin-bottom: 14px; }
+.fp-card--accent {
+  border-left: 4px solid var(--fp-accent);
+  box-shadow: 0 12px 34px var(--fp-glow);
+}
+.fp-card--accent-cyan {
+  border-left-color: var(--fp-accent-2);
+  box-shadow: 0 12px 34px var(--fp-glow-2);
+}
+.fp-card--live {
+  border: 1.5px solid var(--fp-accent);
+  box-shadow: 0 14px 38px var(--fp-glow);
+}
+.fp-body-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--fp-text-2);
+}
+
+/* ── Metric widgets ────────────────────────────────────── */
+.fp-web__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 16px;
+}
+.fp-web__metrics--3 { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.fp-web__metrics--2 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.fp-metric {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  border-radius: 20px;
+  background: var(--fp-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--fp-border);
+  box-shadow: 0 10px 26px var(--fp-shadow-soft);
+  transition: transform 180ms, border-color 180ms, box-shadow 180ms;
+}
+.fp-metric:hover {
+  transform: translateY(-2px);
+  border-color: var(--fp-border-strong);
+  box-shadow: 0 16px 34px var(--fp-shadow);
+}
+.fp-metric--center { align-items: center; text-align: center; }
+.fp-metric__ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.fp-metric__label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+}
+.fp-metric__value {
+  font-size: 25px;
+  font-weight: 800;
+  color: var(--fp-text);
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+}
+.fp-metric__unit { font-size: 13px; font-weight: 600; color: var(--fp-muted); }
+.fp-metric__sub { margin-top: 5px; font-size: 11.5px; color: var(--fp-muted); }
+
+/* ── Stat strip (chart summaries) ──────────────────────── */
+.fp-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+.fp-strip__item {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--fp-glass);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--fp-border);
+  box-shadow: 0 8px 22px var(--fp-shadow-soft);
+}
+.fp-strip__value { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; }
+.fp-strip__label { margin-top: 3px; font-size: 11.5px; color: var(--fp-muted); font-weight: 600; }
+
+/* ── Progress bars ─────────────────────────────────────── */
+.fp-bar {
+  height: 8px;
+  border-radius: 5px;
+  background: var(--fp-track);
+  overflow: hidden;
+}
+.fp-bar__fill {
+  height: 100%;
+  border-radius: 5px;
+  animation: bar-fill 700ms ease-out both;
+  --fill-w: 100%;
+}
+.fp-bar__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 9px;
+  font-size: 12px;
+  color: var(--fp-muted);
+  font-weight: 600;
+}
+
+/* ── Charts ────────────────────────────────────────────── */
+.fp-chart { width: 100%; min-width: 0; }
+.fp-chart--steps { height: 190px; margin-top: 6px; }
+.fp-chart--md { height: 200px; }
+.fp-chart--lg { height: 268px; margin-top: 4px; }
+.fp-chart .recharts-surface { overflow: visible; }
+
+/* ── Home widgets ──────────────────────────────────────── */
+.fp-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.fp-hero__avatar {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 27px;
+  background: linear-gradient(135deg, var(--fp-accent), var(--fp-accent-2));
+  box-shadow: 0 8px 22px var(--fp-glow);
+}
+.fp-hero__greet { font-size: 12.5px; color: var(--fp-muted); font-weight: 600; }
+.fp-hero__name {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--fp-text);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+.fp-hero__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fp-text-2);
+}
+.fp-chip--orange { color: var(--fp-orange); border-color: var(--fp-border-strong); }
+.fp-hero-steps { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.fp-hero-steps__value {
+  font-size: 46px;
+  font-weight: 900;
+  letter-spacing: -1.6px;
+  color: var(--fp-text);
+  line-height: 1;
+}
+.fp-hero-steps__delta { font-size: 13px; font-weight: 700; color: var(--fp-accent); }
+.fp-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+.fp-insight:last-child { margin-bottom: 0; }
+.fp-insight__dot { font-size: 11px; color: var(--fp-accent); margin-top: 3px; line-height: 1; }
+.fp-insight__text { margin: 0; font-size: 13px; line-height: 1.65; color: var(--fp-text-2); }
+.fp-cta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border);
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  text-align: left;
+  transition: transform 180ms, border-color 180ms, box-shadow 180ms;
+}
+button.fp-cta:hover {
+  transform: translateY(-2px);
+  border-color: var(--fp-border-strong);
+  box-shadow: 0 14px 30px var(--fp-shadow-soft);
+}
+.fp-cta--static { cursor: default; }
+.fp-cta__ico {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: var(--fp-glass);
+  border: 1px solid var(--fp-border);
+}
+.fp-cta__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.fp-cta__title { font-size: 14.5px; font-weight: 700; color: var(--fp-text); }
+.fp-cta__sub { font-size: 12px; color: var(--fp-muted); }
+.fp-cta__arrow { font-size: 20px; color: var(--fp-accent); font-weight: 700; }
+
+/* ── Progress widgets ──────────────────────────────────── */
+.fp-seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--fp-glass);
+  border: 1px solid var(--fp-border);
+}
+.fp-seg__btn {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--fp-muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 180ms, color 180ms;
+}
+.fp-seg__btn:hover { color: var(--fp-text); }
+.fp-seg__btn.is-active {
+  background: linear-gradient(135deg, var(--fp-accent), var(--fp-accent-2));
+  color: #fff;
+  box-shadow: 0 6px 18px var(--fp-glow);
+}
+.fp-bmi { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+.fp-bmi__ico {
+  width: 62px;
+  height: 62px;
+  flex: 0 0 62px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: var(--fp-glass-2);
+  border: 2px solid var(--fp-border-strong);
+}
+.fp-bmi__value {
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--fp-accent);
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+.fp-bmi__meta {
+  margin-top: auto;
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--fp-track);
+}
+.fp-bmi__meta > div { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.fp-bmi__key { font-size: 11.5px; color: var(--fp-muted); font-weight: 600; }
+.fp-bmi__val { font-size: 14px; font-weight: 700; color: var(--fp-text); }
+.fp-badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+.fp-badge {
+  padding: 16px 12px;
+  border-radius: 18px;
+  text-align: center;
+  background: var(--fp-glass);
+  border: 1.5px solid var(--fp-border);
+  opacity: 0.55;
+}
+.fp-badge.is-earned {
+  opacity: 1;
+  border-color: var(--fp-border-strong);
+  box-shadow: 0 10px 26px var(--fp-shadow-soft);
+}
+.fp-badge__ico { font-size: 28px; margin-bottom: 6px; }
+.fp-badge__label { font-size: 11.5px; font-weight: 700; color: var(--fp-text); }
+
+/* ── Activity Log widgets ──────────────────────────────── */
+.fp-tabs {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.fp-tab {
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--fp-glass);
+  border: 1.5px solid var(--fp-border);
+  color: var(--fp-muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 180ms, color 180ms, border-color 180ms;
+}
+.fp-tab:hover { color: var(--fp-text); border-color: var(--fp-border-strong); }
+.fp-tab.is-active {
+  color: var(--fp-accent);
+  border-color: var(--fp-accent);
+  background: var(--fp-glass-2);
+  box-shadow: 0 6px 18px var(--fp-glow);
+}
+.fp-split {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.fp-big-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+.fp-big-value {
+  font-size: 44px;
+  font-weight: 900;
+  color: var(--fp-text);
+  letter-spacing: -1.4px;
+  line-height: 1.05;
+  margin-bottom: 8px;
+}
+.fp-big-value--xl { font-size: 66px; }
+.fp-big-unit { font-size: 15px; font-weight: 600; color: var(--fp-muted); letter-spacing: 0; }
+.fp-goal { text-align: right; }
+.fp-goal__label { font-size: 11.5px; color: var(--fp-muted); font-weight: 600; }
+.fp-goal__value { font-size: 22px; font-weight: 800; color: var(--fp-text); }
+.fp-goal__pct { font-size: 12.5px; font-weight: 700; color: var(--fp-accent); }
+.fp-nutrition {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  flex-wrap: wrap;
+}
+.fp-legend { flex: 1; min-width: 190px; }
+.fp-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--fp-track);
+}
+.fp-legend__row:last-child { border-bottom: none; }
+.fp-legend__dot { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 11px; }
+.fp-legend__label { flex: 1; font-size: 13px; font-weight: 600; color: var(--fp-text-2); }
+.fp-legend__value { font-size: 13.5px; font-weight: 800; }
+.fp-sleepmeta { text-align: right; font-size: 12.5px; color: var(--fp-muted); line-height: 1.7; }
+.fp-heart-ico {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  background: var(--fp-glass-2);
+  border: 2px solid var(--fp-border-strong);
+  animation: hr-pulse 1.2s ease-in-out infinite;
+}
+.fp-stress {
+  display: grid;
+  grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
+  gap: 32px;
+  align-items: center;
+}
+.fp-stress__scale { min-width: 0; }
+.fp-stress__track {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, var(--fp-accent), var(--fp-lime), var(--fp-orange), var(--fp-red));
+}
+.fp-stress__marker {
+  position: absolute;
+  top: -5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--fp-surface);
+  border: 3px solid var(--fp-accent);
+  transform: translateX(-50%);
+  box-shadow: 0 3px 10px var(--fp-glow);
+}
+.fp-stress__levels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fp-muted);
+  margin-bottom: 22px;
+}
+.fp-water-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0 4px;
+}
+.fp-water-wrap > div { width: 100%; max-width: 430px; }
+
+/* ── Workouts widgets ──────────────────────────────────── */
+.fp-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 220px;
+  padding: 11px 16px;
+  border-radius: 14px;
+  background: var(--fp-glass);
+  border: 1px solid var(--fp-border-strong);
+}
+.fp-search__ico { font-size: 15px; }
+.fp-search__ph { font-size: 13.5px; color: var(--fp-muted); font-weight: 500; }
+.fp-cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+.fp-cat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border);
+  font-family: 'Outfit', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms, border-color 180ms, box-shadow 180ms;
+}
+.fp-cat:hover {
+  transform: translateY(-2px);
+  border-color: var(--fp-border-strong);
+  box-shadow: 0 14px 30px var(--fp-shadow-soft);
+}
+.fp-cat__ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+}
+.fp-cat__name { font-size: 14px; font-weight: 700; color: var(--fp-text); }
+.fp-cat__cal { font-size: 12px; font-weight: 700; }
+.fp-live__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.fp-live__title { font-size: 14.5px; font-weight: 700; color: var(--fp-accent); }
+.fp-live__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--fp-accent);
+  box-shadow: 0 0 10px var(--fp-accent);
+  animation: pulse-glow 1.5s infinite;
+}
+.fp-live__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 12px;
+  text-align: center;
+  margin-bottom: 18px;
+}
+.fp-live__value { font-size: 17px; font-weight: 800; color: var(--fp-text); }
+.fp-live__label { font-size: 10.5px; color: var(--fp-muted); font-weight: 600; }
+
+/* ── Community widgets ─────────────────────────────────── */
+.fp-joined {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 13px;
+  background: var(--fp-glass);
+  border: 1px solid var(--fp-border-strong);
+  color: var(--fp-accent);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.fp-chal { display: flex; align-items: flex-start; gap: 16px; }
+.fp-chal__ico {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+.fp-chal__body { flex: 1; min-width: 0; }
+.fp-chal__title { font-size: 15px; font-weight: 700; color: var(--fp-text); }
+.fp-chal__end { font-size: 12px; color: var(--fp-muted); margin: 3px 0 12px; }
+.fp-chal__pct { margin-top: 8px; font-size: 12px; font-weight: 800; }
+.fp-lb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 10px;
+  border-radius: 12px;
+}
+.fp-lb.is-you { background: var(--fp-glass-2); }
+.fp-lb__rank { width: 26px; font-size: 17px; text-align: center; }
+.fp-lb__avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  background: var(--fp-glass-2);
+}
+.fp-lb__name { flex: 1; font-size: 13.5px; font-weight: 600; color: var(--fp-text); }
+.fp-lb.is-you .fp-lb__name { font-weight: 800; color: var(--fp-accent); }
+.fp-lb__score { font-size: 13.5px; font-weight: 700; color: var(--fp-muted); }
+.fp-lb.is-you .fp-lb__score { color: var(--fp-accent); }
+.fp-post {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border);
+}
+.fp-post__head { display: flex; align-items: center; gap: 11px; margin-bottom: 10px; }
+.fp-post__avatar {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  background: var(--fp-glass);
+}
+.fp-post__who { display: flex; flex-direction: column; }
+.fp-post__name { font-size: 13.5px; font-weight: 700; color: var(--fp-text); }
+.fp-post__time { font-size: 11.5px; color: var(--fp-muted); }
+.fp-post__msg { margin: 0 0 12px; font-size: 13.5px; line-height: 1.6; color: var(--fp-text-2); }
+.fp-post__actions { display: flex; gap: 18px; }
+.fp-post__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--fp-muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 150ms;
+}
+.fp-post__btn:hover { color: var(--fp-accent); }
+.fp-post__btn-ico { font-size: 15px; }
+
+/* ── Setting / account rows ────────────────────────────── */
+.fp-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 13px 4px;
+  background: none;
+  border: none;
+  border-radius: 14px;
+  border-bottom: 1px solid var(--fp-track);
+  color: var(--fp-text);
+  font-family: 'Outfit', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms, transform 160ms;
+}
+button.fp-row:hover {
+  background: var(--fp-glass-2);
+  transform: translateX(2px);
+}
+.fp-row:last-child { border-bottom: none; }
+.fp-row--static { cursor: default; }
+.fp-row--static:hover { transform: none; }
+.fp-row__ico {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+}
+.fp-row__ico--plain { background: var(--fp-glass-2); border: 1px solid var(--fp-border); }
+.fp-row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fp-row__label { font-size: 14px; font-weight: 600; color: var(--fp-text); }
+.fp-row.is-danger .fp-row__label { color: var(--fp-red); }
+.fp-row__sub { font-size: 11.5px; color: var(--fp-muted); }
+.fp-row__arrow { font-size: 17px; color: var(--fp-lighter); }
+.fp-row__right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.fp-row__value { font-size: 12.5px; font-weight: 700; }
+
+/* ── Account profile card ──────────────────────────────── */
+.fp-card--profile { justify-content: space-between; }
+.fp-profile { text-align: center; padding: 6px 0 0; }
+.fp-profile__avatar {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  background: linear-gradient(135deg, var(--fp-accent), var(--fp-accent-2));
+  box-shadow: 0 12px 30px var(--fp-glow);
+}
+.fp-profile__edit {
+  position: absolute;
+  right: 0;
+  bottom: 2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.fp-profile__name { font-size: 20px; font-weight: 800; color: var(--fp-text); letter-spacing: -0.4px; }
+.fp-profile__mail { font-size: 12.5px; color: var(--fp-muted); margin: 3px 0 12px; }
+.fp-profile__stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--fp-track);
+}
+.fp-profile__stat { text-align: center; }
+.fp-profile__value { font-size: 18px; font-weight: 800; color: var(--fp-text); }
+.fp-profile__stat-label { font-size: 10.5px; color: var(--fp-muted); font-weight: 600; }
+.fp-profile__foot {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--fp-track);
+  text-align: center;
+  font-size: 11px;
+  color: var(--fp-muted);
+}
+
+/* ── Focus + motion accessibility ──────────────────────── */
+.fp-web button:focus-visible,
+.fp-web__btn:focus-visible,
+.fp-cta:focus-visible,
+.fp-tab:focus-visible,
+.fp-seg__btn:focus-visible {
+  outline: 2px solid var(--fp-accent);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fp-web__grid,
+  .fp-web__pop,
+  .fp-live__dot,
+  .fp-heart-ico,
+  .fp-bar__fill,
+  .fp-badge.is-earned { animation: none !important; }
+}
+
+/* ── Responsive web shell ───────────────────────────────────
+   Narrow windows / tablets: denser chrome and a two-column dashboard
+   (the sidebar itself is collapsed from the topbar button). ────── */
+@media (max-width: 1279px) {
+  .fp-web__topbar { padding: 14px 20px; gap: 12px; }
+  .fp-web__title { font-size: 20px; }
+  .fp-web__content { padding: 20px 20px 40px; }
+  .fp-web__grid { gap: 16px; }
+  /* two-column dashboard: side widgets pair up, wide ones go full width */
+  .fp-web__w--3,
+  .fp-web__w--4,
+  .fp-web__w--5,
+  .fp-web__w--6 { grid-column: span 6; }
+  .fp-web__w--7,
+  .fp-web__w--8 { grid-column: span 12; }
+}
+
+/* ≤ 1023px → denser header, single-column stress widget */
+@media (max-width: 1023px) {
+  .fp-web__user-name { display: none; }
+  .fp-web__user { padding: 5px; }
+  .fp-stress { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .fp-stress__score { text-align: left; }
+  .fp-hero-steps__value { font-size: 40px; }
+  .fp-big-value { font-size: 38px; }
+  .fp-big-value--xl { font-size: 56px; }
+}
+
+/* ≤ 839px (small tablets / split windows) → cards stack */
+@media (max-width: 839px) {
+  .fp-web__w--3,
+  .fp-web__w--4,
+  .fp-web__w--5,
+  .fp-web__w--6,
+  .fp-web__w--7,
+  .fp-web__w--8 { grid-column: span 12; }
+  .fp-web__topbar { flex-wrap: wrap; }
+  .fp-web__actions { width: 100%; justify-content: flex-end; }
+  .fp-web__metrics { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .fp-web__content { padding: 16px 16px 36px; }
+  .fp-card { padding: 18px; border-radius: 20px; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   FITPULSE WEB FIRST-RUN SCREENS
+   Splash → walkthrough → login / sign up → profile → device sync →
+   goals → permissions, as full-page web screens (src/webauth.tsx).
+   Phones and the embedded presentation keep the phone layouts.
+   ════════════════════════════════════════════════════════════ */
+.fp-auth {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  min-height: 100dvh;
+  padding: 40px 28px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--fp-bg);
+  color: var(--fp-text);
+  font-family: 'Outfit', sans-serif;
+}
+.fp-auth__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+.fp-auth__glow--a {
+  top: -14%;
+  left: -6%;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, var(--fp-glow), transparent 70%);
+}
+.fp-auth__glow--b {
+  bottom: -18%;
+  right: -4%;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, var(--fp-glow-2), transparent 70%);
+}
+.fp-auth__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 860px;
+  animation: fade-slide-up 340ms ease-out both;
+}
+.fp-auth__inner--wide { max-width: 1040px; }
+/* Login / Create Account: bigger stage than the shared first-run
+   screens. The card itself is sized in the --auth media queries
+   further down (≥1024px and ≥1280px). */
+.fp-auth__inner--auth { max-width: 1000px; }
+
+.fp-auth__head { text-align: center; margin-bottom: 22px; }
+.fp-auth__head-ico { font-size: 46px; margin-bottom: 10px; }
+.fp-auth__head h2 {
+  margin: 0 0 6px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--fp-text);
+  line-height: 1.15;
+}
+.fp-auth__head p { margin: 0; color: var(--fp-muted); font-size: 14px; line-height: 1.6; }
+
+.fp-auth__card {
+  padding: 26px;
+  border-radius: 24px;
+  background: var(--fp-glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--fp-border-strong);
+  box-shadow: 0 18px 50px var(--fp-shadow);
+}
+.fp-auth__group { margin-top: 22px; }
+.fp-auth__label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--fp-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.fp-auth__chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.fp-auth__chip {
+  flex: 1;
+  min-width: 120px;
+  padding: 13px 10px;
+  border-radius: 14px;
+  background: var(--fp-glass-2);
+  border: 1.5px solid var(--fp-border);
+  color: var(--fp-muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: all 200ms;
+}
+.fp-auth__chip:hover { color: var(--fp-text); border-color: var(--fp-border-strong); }
+.fp-auth__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 460px;
+  margin: 22px auto 0;
+}
+
+/* ── Form fields ────────────────────────────────────────── */
+.fp-auth__form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 14px;
+}
+.fp-auth__field { position: relative; display: block; margin-bottom: 12px; }
+.fp-auth__field-ico {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  pointer-events: none;
+}
+.fp-auth__field input {
+  width: 100%;
+  padding: 13px 16px 13px 44px;
+  border-radius: 14px;
+  background: var(--fp-input-bg);
+  border: 1px solid var(--fp-field);
+  color: var(--fp-text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14.5px;
+  outline: none;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.fp-auth__field input:focus {
+  border-color: var(--fp-accent);
+  box-shadow: 0 0 0 3px var(--fp-glow);
+}
+.fp-auth__field input::placeholder { color: var(--fp-muted); }
+.fp-auth__form-row { display: flex; justify-content: flex-end; margin: 2px 0 16px; }
+.fp-auth__link {
+  background: none;
+  border: none;
+  color: var(--fp-accent);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+.fp-auth__link:hover { text-decoration: underline; }
+.fp-auth__divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--fp-muted);
+  font-size: 12px;
+}
+.fp-auth__divider span { flex: 1; height: 1px; background: var(--fp-field); }
+.fp-auth__social {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.fp-auth__social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border);
+  cursor: pointer;
+  transition: transform 150ms, border-color 150ms, box-shadow 150ms;
+}
+.fp-auth__social-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--fp-border-strong);
+  box-shadow: 0 10px 22px var(--fp-shadow-soft);
+}
+.fp-auth__social-btn img { width: 38px; height: 32px; object-fit: contain; }
+.fp-auth__switch { text-align: center; margin: 20px 0 0; color: var(--fp-muted); font-size: 14px; }
+
+/* ── Split (brand panel + form) layouts ─────────────────── */
+.fp-auth__split {
+  display: grid;
+  grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
+  gap: 44px;
+  align-items: center;
+}
+.fp-auth__brand { padding: 8px 0; }
+.fp-auth__brand-name {
+  margin-top: 18px;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -1.2px;
+  color: var(--fp-text);
+  line-height: 1.1;
+}
+.fp-auth__brand-tag {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--fp-muted);
+}
+.fp-auth__panel {
+  padding: 28px;
+  border-radius: 26px;
+  background: var(--fp-glass);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+  border: 1px solid var(--fp-border-strong);
+  box-shadow: 0 22px 60px var(--fp-shadow);
+}
+.fp-auth__panel-head { margin-bottom: 22px; }
+.fp-auth__panel-head h2 {
+  margin: 0 0 5px;
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--fp-text);
+}
+.fp-auth__panel-head p { margin: 0; color: var(--fp-muted); font-size: 14px; }
+
+/* ── Splash ─────────────────────────────────────────────── */
+.fp-auth--splash { flex-direction: column; gap: 48px; }
+.fp-auth__splash-card {
+  position: relative;
+  padding: 56px 76px;
+  border-radius: 34px;
+  text-align: center;
+  background: var(--fp-glass);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid var(--fp-border-strong);
+  box-shadow: 0 26px 70px var(--fp-shadow);
+}
+.fp-auth__splash-logo { position: relative; display: inline-block; animation: logo-enter 250ms ease-out both; }
+.fp-auth__splash-logo::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--fp-glow), transparent);
+  filter: blur(16px);
+  animation: pulse-glow 2.5s ease-in-out infinite 250ms;
+}
+.fp-auth__splash-name {
+  margin: 22px 0 0;
+  font-size: 58px;
+  font-weight: 900;
+  letter-spacing: -2px;
+  color: var(--fp-text);
+  animation: fade-slide-up 300ms ease-out 250ms both;
+}
+.fp-auth__splash-tag {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--fp-muted);
+  animation: fade-slide-up 300ms ease-out 350ms both;
+}
+.fp-auth__splash-ring {
+  width: 52px;
+  height: 52px;
+  position: relative;
+  animation: fade-slide-up 300ms ease-out 450ms both;
+}
+.fp-auth__splash-copy {
+  position: absolute;
+  bottom: 30px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fp-lighter);
+  animation: fade-slide-up 300ms ease-out 550ms both;
+}
+
+/* ── Walkthrough / onboarding ───────────────────────────── */
+.fp-auth__onboard { display: flex; flex-direction: column; gap: 26px; }
+.fp-auth__onboard-top { display: flex; align-items: center; justify-content: space-between; }
+.fp-auth__mini-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--fp-text);
+}
+.fp-auth__skip {
+  background: none;
+  border: none;
+  color: var(--fp-muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 150ms;
+}
+.fp-auth__skip:hover { color: var(--fp-text); }
+.fp-auth__onboard-body {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: 44px;
+  align-items: center;
+}
+.fp-auth__onboard-body.is-fwd { animation: slide-in-right 350ms ease-out both; }
+.fp-auth__onboard-body.is-bwd { animation: slide-in-left 350ms ease-out both; }
+.fp-auth__onboard-art {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fp-auth__onboard-art > div { width: 100%; }
+.fp-auth__onboard-text h2 {
+  margin: 14px 0 10px;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  color: var(--fp-text);
+  line-height: 1.15;
+}
+.fp-auth__onboard-text p { margin: 0; font-size: 15.5px; color: var(--fp-muted); line-height: 1.65; }
+.fp-auth__dots { display: flex; gap: 8px; }
+.fp-auth__dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--fp-faint);
+  cursor: pointer;
+  transition: all 300ms;
+}
+.fp-auth__dots span.is-active { width: 28px; }
+.fp-auth__onboard-actions { display: flex; gap: 12px; margin-top: 28px; align-items: center; }
+.fp-auth__onboard-actions > * { flex: 0 0 auto; min-width: 168px; }
+
+/* ── Web primary buttons (desktop professional sizing) ──────
+   Only hooks opt-in .fp-web-btn classNames, so the mobile/embed
+   presentation (no class) renders exactly as before. */
+button.fp-web-btn {
+  padding: 16px 30px;
+  min-height: 54px;
+  font-size: 15px;
+  border-radius: 16px;
+}
+/* Onboarding action row: primary fills the free space, Back is a
+   fixed, reasonably-distanced companion right beside it. */
+.fp-auth__onboard-actions .fp-web-btn--grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.fp-auth__onboard-actions .fp-web-btn--back {
+  width: auto;
+  min-width: 0;
+  padding-left: 30px;
+  padding-right: 30px;
+  flex: 0 0 auto;
+}
+
+/* ── Setup steps (profile / sync / goals / permissions) ─── */
+.fp-auth__avatar {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  background: linear-gradient(135deg, var(--fp-accent), var(--fp-accent-2));
+  box-shadow: 0 0 0 4px var(--fp-surface), 0 0 0 7px var(--fp-glow);
+}
+.fp-auth__avatar-cam {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: var(--fp-accent);
+  color: #fff;
+  border: 2px solid var(--fp-surface);
+  box-shadow: 0 2px 8px var(--fp-shadow);
+}
+.fp-auth__status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border);
+}
+.fp-auth__status-text { flex: 1; font-size: 14px; font-weight: 700; }
+.fp-auth__status-pct { font-size: 12.5px; font-weight: 700; }
+.fp-auth__progress {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--fp-field);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.fp-auth__progress-fill { height: 100%; border-radius: 3px; transition: width 150ms ease-out; }
+.fp-auth__devices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.fp-auth__device {
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--fp-glass-2);
+  border: 1.5px solid var(--fp-border);
+  font-family: 'Outfit', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: all 220ms;
+}
+.fp-auth__device:hover { border-color: var(--fp-border-strong); transform: translateY(-1px); }
+.fp-auth__device.is-active {
+  border-color: var(--fp-accent);
+  transform: scale(1.02);
+  box-shadow: 0 4px 20px var(--fp-glow);
+}
+.fp-auth__device-ico { font-size: 26px; margin-bottom: 6px; }
+.fp-auth__device-name { font-size: 13.5px; font-weight: 700; color: var(--fp-text); }
+.fp-auth__device-sub { font-size: 11.5px; color: var(--fp-muted); }
+.fp-auth__device-state { font-size: 10.5px; font-weight: 700; margin-top: 5px; }
+.fp-auth__goals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+.fp-auth__goal {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--fp-glass-2);
+  border: 1.5px solid var(--fp-border);
+  font-family: 'Outfit', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: all 220ms cubic-bezier(0.34, 1.36, 0.64, 1);
+}
+.fp-auth__goal:hover { border-color: var(--fp-border-strong); }
+.fp-auth__goal.is-on { transform: scale(1.02); }
+.fp-auth__goal-ico {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+.fp-auth__goal-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fp-auth__goal-title { font-size: 15px; font-weight: 700; color: var(--fp-text); }
+.fp-auth__goal-sub { font-size: 12px; color: var(--fp-muted); }
+.fp-auth__goal-check {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #fff;
+  background: var(--fp-track);
+  border: 2px solid var(--fp-field);
+  transition: all 200ms;
+}
+.fp-auth__rows { display: flex; flex-direction: column; gap: 4px; }
+
+/* ── Responsive first-run screens ───────────────────────── */
+@media (max-width: 1023px) {
+  .fp-auth { padding: 26px 18px; }
+  .fp-auth__split { grid-template-columns: 1fr; gap: 20px; }
+  .fp-auth__brand { text-align: center; }
+  .fp-auth__brand-name { margin-top: 14px; font-size: 28px; }
+  .fp-auth__onboard-body { grid-template-columns: 1fr; gap: 8px; }
+  .fp-auth__onboard-art { max-width: 380px; }
+  .fp-auth__onboard-text h2 { font-size: 27px; }
+  .fp-auth__form-grid { grid-template-columns: 1fr; }
+  .fp-auth__splash-card { padding: 42px 34px; }
+  .fp-auth__splash-name { font-size: 44px; }
+  .fp-auth__head h2 { font-size: 25px; }
+  .fp-auth__actions { max-width: none; }
+}
+@media (max-width: 839px) {
+  .fp-auth__card { padding: 20px; border-radius: 20px; }
+  .fp-auth__panel { padding: 22px; border-radius: 22px; }
+  .fp-auth__onboard-actions > * { flex: 1 1 auto; }
+}
+
+/* ── Login / Create Account: comfortable desktop card ─────
+   Mid-size desktop / tablet-landscape windows get a wider split and a
+   roomier card; the ≥1280px block at the end of this file scales it up
+   again. Phones and the stacked (<1024px) layout are untouched. */
+@media (min-width: 1024px) {
+  .fp-auth__inner--auth { max-width: 1020px; }
+  .fp-auth__split--auth {
+    grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+    gap: 54px;
+  }
+  .fp-auth__panel--auth {
+    padding: 40px 38px;
+    border-radius: 30px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   WEB CONTROL SIZING + FROSTED SURFACES
+   Comfortable desktop click-targets for every control inside the web
+   shell — page actions, dashboard widgets and the app modals it opens
+   (`.fp-btn` is the shared app-button marker from features.tsx).
+   Mobile and the embedded presentation never match the `.fp-web`
+   ancestor, so their compact phone sizing stays untouched.
+   ════════════════════════════════════════════════════════════ */
+.fp-web .fp-btn {
+  min-height: 50px;
+  padding: 14px 24px;
+  font-size: 14.5px;
+  border-radius: 15px;
+  gap: 9px;
+}
+.fp-web__btn {
+  min-height: 46px;
+  padding: 12px 20px;
+  font-size: 14px;
+  border-radius: 14px;
+}
+.fp-web__icon-btn { width: 44px; height: 44px; font-size: 18px; border-radius: 13px; }
+.fp-web__user { min-height: 44px; }
+.fp-tab { min-height: 44px; padding: 11px 18px; font-size: 13px; }
+.fp-seg__btn { min-height: 40px; padding: 10px 20px; font-size: 13px; }
+.fp-web__pop-item { min-height: 46px; }
+.fp-web__pop-all { min-height: 46px; }
+.fp-web__pop-clear { padding: 6px 8px; }
+.fp-row { min-height: 64px; }
+.fp-cat { min-height: 136px; justify-content: center; }
+.fp-cta { min-height: 80px; }
+.fp-post__btn { min-height: 36px; }
+.fp-auth__chip { min-height: 52px; }
+
+/* Frosted surfaces — same glass language as the phone app's bars. */
+.fp-card,
+.fp-metric,
+.fp-strip__item,
+.fp-web__pop,
+.fp-web__btn,
+.fp-web__icon-btn,
+.fp-web__user,
+.fp-web__menu-btn,
+.fp-web__streak {
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+}
+
+/* ════════════════════════════════════════════════════════════
+   PREMIUM FROSTED GLASS — the whole web application
+   Layered drifting aurora behind the UI + heavy frosted surfaces
+   with sheen, bright frosted edges and inner highlights, all on the
+   web-only --fp-web-* tokens (phone/embed keep their own tokens).
+   Palette stays on-brand: emerald → cyan → violet.
+   ════════════════════════════════════════════════════════════ */
+@keyframes fp-drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(-4%, 5%, 0) scale(1.12); }
+}
+@keyframes fp-drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.08); }
+  50%      { transform: translate3d(4%, -5%, 0) scale(0.98); }
+}
+@keyframes fp-drift-c {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.96); }
+  50%      { transform: translate3d(-3%, -6%, 0) scale(1.1); }
+}
+
+/* Ambient aurora — the glass blurs against this, so it has to be rich */
+.fp-web,
+.fp-auth {
+  background:
+    radial-gradient(1200px 760px at 10% -12%, var(--fp-glow), transparent 62%),
+    radial-gradient(1000px 680px at 96% 4%, var(--fp-glow-2), transparent 64%),
+    radial-gradient(880px 760px at 48% 116%, var(--fp-glow-3), transparent 62%),
+    var(--fp-bg);
+}
+.fp-web__glow,
+.fp-auth__glow {
+  filter: blur(90px);
+  opacity: 0.9;
+}
+.fp-web__glow--a,
+.fp-auth__glow--a {
+  top: -18%;
+  left: -8%;
+  right: auto;
+  width: 620px;
+  height: 620px;
+  background: radial-gradient(circle, var(--fp-glow), transparent 70%);
+  animation: fp-drift-a 20s ease-in-out infinite;
+}
+.fp-web__glow--b,
+.fp-auth__glow--b {
+  bottom: -22%;
+  right: -6%;
+  left: auto;
+  width: 580px;
+  height: 580px;
+  background: radial-gradient(circle, var(--fp-glow-2), transparent 70%);
+  animation: fp-drift-b 26s ease-in-out infinite;
+}
+.fp-web__glow--c,
+.fp-auth__glow--c {
+  top: 30%;
+  left: 42%;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, var(--fp-glow-3), transparent 70%);
+  animation: fp-drift-c 32s ease-in-out infinite;
+}
+/* Fine frosted grain so the glass reads as real glass */
+.fp-web::after,
+.fp-auth::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px, 44px 44px;
+  background-position: 0 0, 14px 18px;
+}
+
+/* ── Navigation chrome: heavy frosted glass ───────────────
+   Every value comes from the theme knobs documented in the theme-token
+   block at the top of this file. To make the web nav more / less
+   see-through:
+     • left rail (collapsible sidebar) → --fp-web-sidebar-alpha
+     • top bar                        → --fp-web-nav-alpha
+     • frosted blur + top highlight   → --fp-web-nav-blur / -sheen
+   Both light and dark values live in their own theme block. */
+.fp-web__sidebar,
+.fp-web__topbar {
+  background:
+    linear-gradient(180deg, var(--fp-web-nav-sheen) 0%, transparent 22%),
+    var(--fp-web-nav);
+  backdrop-filter: blur(var(--fp-web-nav-blur)) saturate(200%);
+  -webkit-backdrop-filter: blur(var(--fp-web-nav-blur)) saturate(200%);
+}
+/* The left rail uses its own dial so it can stay a bright frosted panel
+   in light mode (the aurora is strongest behind the rail) while the top
+   bar keeps its own alpha. Collapsed and expanded share this styling. */
+.fp-web__sidebar {
+  background:
+    linear-gradient(180deg, var(--fp-web-nav-sheen) 0%, transparent 22%),
+    var(--fp-web-sidebar);
+  border-right: 1px solid var(--fp-web-edge);
+  box-shadow:
+    inset 1px 0 0 var(--fp-web-inner),
+    26px 0 70px -30px var(--fp-shadow);
+}
+.fp-web__topbar {
+  border-bottom: 1px solid var(--fp-web-edge);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-inner),
+    0 18px 46px -22px var(--fp-shadow);
+}
+
+/* ── Navigation items ───────────────────────────────────── */
+.fp-web__nav-item:hover {
+  background:
+    linear-gradient(160deg, var(--fp-web-sheen) 0%, transparent 62%),
+    var(--fp-web-glass);
+  border-color: var(--fp-web-edge);
+  box-shadow: 0 12px 28px -14px var(--fp-shadow);
+}
+.fp-web__nav-item.is-active {
+  color: var(--fp-accent);
+  background:
+    linear-gradient(135deg, var(--fp-glow), transparent 72%),
+    var(--fp-web-glass-2);
+  border-color: var(--fp-web-edge);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-inner),
+    0 16px 36px -16px var(--fp-glow);
+}
+.fp-web__streak {
+  background:
+    linear-gradient(160deg, var(--fp-web-sheen) 0%, transparent 60%),
+    var(--fp-web-glass);
+  border: 1px solid var(--fp-web-edge);
+  box-shadow: inset 0 1px 0 var(--fp-web-inner);
+}
+
+/* ── Buttons + chips = polished glass ───────────────────── */
+.fp-web__btn,
+.fp-web__icon-btn,
+.fp-web__user,
+.fp-web__menu-btn,
+.fp-seg,
+.fp-tab {
+  background:
+    linear-gradient(165deg, var(--fp-web-sheen) 0%, transparent 58%),
+    var(--fp-web-glass-2);
+  border: 1px solid var(--fp-web-edge);
+  backdrop-filter: blur(30px) saturate(185%);
+  -webkit-backdrop-filter: blur(30px) saturate(185%);
+  box-shadow: inset 0 1px 0 var(--fp-web-inner);
+}
+.fp-web__btn:hover,
+.fp-web__icon-btn:hover,
+.fp-web__user:hover,
+.fp-web__menu-btn:hover {
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-inner),
+    0 18px 40px -16px var(--fp-shadow);
+}
+.fp-web__btn--primary {
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.38) 0%, transparent 58%),
+    linear-gradient(135deg, var(--fp-accent), var(--fp-accent-2));
+  border-color: var(--fp-web-edge);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 18px 42px -16px var(--fp-glow);
+}
+.fp-tab:hover {
+  background:
+    linear-gradient(165deg, var(--fp-web-sheen) 0%, transparent 58%),
+    var(--fp-web-glass);
+}
+.fp-tab.is-active {
+  color: var(--fp-accent);
+  border-color: var(--fp-accent);
+  background:
+    linear-gradient(135deg, var(--fp-glow), transparent 72%),
+    var(--fp-web-glass-2);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-inner),
+    0 14px 32px -16px var(--fp-glow);
+}
+.fp-seg__btn.is-active {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 10px 26px -12px var(--fp-glow);
+}
+
+/* ── Popovers / notification panel ─────────────────────── */
+.fp-web__pop {
+  background:
+    linear-gradient(165deg, var(--fp-web-sheen) 0%, transparent 45%),
+    var(--fp-web-glass-2);
+  backdrop-filter: blur(44px) saturate(195%);
+  -webkit-backdrop-filter: blur(44px) saturate(195%);
+  border: 1px solid var(--fp-web-edge);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-inner),
+    0 44px 90px -34px var(--fp-shadow);
+}
+.fp-web__pop-item:hover { background: var(--fp-web-glass); }
+.fp-web__notif-ico { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+
+/* ── Dashboard surfaces ─────────────────────────────────── */
+.fp-card,
+.fp-metric,
+.fp-strip__item {
+  background:
+    linear-gradient(165deg, var(--fp-web-sheen) 0%, transparent 42%),
+    var(--fp-web-glass);
+  backdrop-filter: blur(38px) saturate(190%);
+  -webkit-backdrop-filter: blur(38px) saturate(190%);
+  border: 1px solid var(--fp-web-edge);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-inner),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 26px 60px -30px var(--fp-shadow);
+}
+.fp-card:hover,
+.fp-metric:hover {
+  border-color: var(--fp-web-edge);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-sheen),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 36px 80px -32px var(--fp-shadow),
+    0 22px 60px -40px var(--fp-glow);
+}
+.fp-card--accent {
+  border-left: 4px solid var(--fp-accent);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-inner),
+    0 26px 60px -30px var(--fp-shadow),
+    0 18px 50px -34px var(--fp-glow);
+}
+.fp-card--accent-cyan {
+  border-left-color: var(--fp-accent-2);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-inner),
+    0 26px 60px -30px var(--fp-shadow),
+    0 18px 50px -34px var(--fp-glow-2);
+}
+.fp-cat,
+.fp-cta,
+.fp-post,
+.fp-lb.is-you,
+.fp-badge,
+.fp-strip__item {
+  background:
+    linear-gradient(165deg, var(--fp-web-sheen) 0%, transparent 52%),
+    var(--fp-web-glass-2);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid var(--fp-web-edge);
+  box-shadow: inset 0 1px 0 var(--fp-web-inner);
+}
+.fp-cat:hover,
+.fp-cta:hover,
+.fp-post:hover {
+  border-color: var(--fp-web-edge);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-sheen),
+    0 22px 50px -22px var(--fp-shadow);
+}
+button.fp-row:hover { background: var(--fp-web-glass); }
+
+/* ── First-run screens: same premium glass ──────────────── */
+.fp-auth__card,
+.fp-auth__panel,
+.fp-auth__splash-card {
+  background:
+    linear-gradient(165deg, var(--fp-web-sheen) 0%, transparent 42%),
+    var(--fp-web-glass);
+  backdrop-filter: blur(42px) saturate(190%);
+  -webkit-backdrop-filter: blur(42px) saturate(190%);
+  border: 1px solid var(--fp-web-edge);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-inner),
+    0 34px 80px -34px var(--fp-shadow);
+}
+.fp-auth__chip,
+.fp-auth__device,
+.fp-auth__goal,
+.fp-auth__social-btn,
+.fp-auth__status {
+  background:
+    linear-gradient(165deg, var(--fp-web-sheen) 0%, transparent 55%),
+    var(--fp-web-glass-2);
+  backdrop-filter: blur(32px) saturate(185%);
+  -webkit-backdrop-filter: blur(32px) saturate(185%);
+  border: 1px solid var(--fp-web-edge);
+  box-shadow: inset 0 1px 0 var(--fp-web-inner);
+}
+.fp-auth__device.is-active,
+.fp-auth__goal.is-on {
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-sheen),
+    0 22px 50px -22px var(--fp-glow);
+}
+.fp-auth__field input {
+  background:
+    linear-gradient(165deg, var(--fp-web-sheen) 0%, transparent 60%),
+    var(--fp-web-glass-2);
+  backdrop-filter: blur(26px) saturate(170%);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  border: 1px solid var(--fp-web-edge);
+  box-shadow: inset 0 1px 0 var(--fp-web-inner);
+}
+.fp-auth__field input:focus {
+  border-color: var(--fp-accent);
+  box-shadow:
+    inset 0 1px 0 var(--fp-web-inner),
+    0 0 0 4px var(--fp-glow);
+}
+.fp-auth__dots span.is-active { box-shadow: 0 0 16px var(--fp-glow); }
+.fp-auth__splash-ring,
+.fp-auth__splash-copy { z-index: 1; }
+
+/* ── First-run buttons: full-width glass CTAs ────────────
+   Inline styles from GBtn are intentionally overridden here so the
+   journey buttons get the frosted edge + glow (web-only class).    */
+button.fp-web-btn {
+  white-space: nowrap;
+  /* GBtn writes these inline, so the frosted edge + glow need !important
+     to win — scoped to the web-only .fp-web-btn class. */
+  border: 1px solid var(--fp-web-edge) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 22px 50px -18px var(--fp-glow) !important;
+  transition: transform 160ms, box-shadow 160ms, border-color 160ms;
+}
+button.fp-web-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--fp-accent) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 30px 64px -18px var(--fp-glow) !important;
+}
+button.fp-web-btn:active { transform: translateY(0); }
+
+/* Onboarding row: primary always wide enough for its label on one
+   line, Back sits right beside it; the row wraps on tight screens. */
+.fp-auth__onboard-actions { flex-wrap: wrap; }
+.fp-auth__onboard-actions .fp-web-btn--grow {
+  flex: 1 1 auto;
+  min-width: 240px;
+}
+.fp-auth__onboard-actions .fp-web-btn--back {
+  flex: 0 1 auto;
+  min-width: 140px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fp-web__glow,
+  .fp-auth__glow { animation: none !important; }
+  button.fp-web-btn:hover { transform: none; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   LARGE-DESKTOP SCALE — first-run screens
+   On a PC the walkthrough uses the full canvas (wide two-pane
+   layout, bigger artwork, typography and CTAs) instead of a
+   tablet-sized column. Tablets keep the compact layout above.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Overlay legibility: light mode matches dark mode ──────────
+   Popovers, modals and sheets render ON TOP of live content. The
+   dark theme already hid the page behind with solid dark surfaces;
+   in light mode the same 42%-white page glass let text bleed
+   through and mush the view. Same technique as dark mode, applied
+   to overlays only — page cards keep their airy glass:
+     1) the surface itself uses a near-solid frosted backdrop, and
+     2) the scrim BEHIND the overlay blurs the page (frosted glass),
+        so nothing behind the sub-widget shows through sharp.
+   Scoped to .fp-web so the phone app/embed rendering is untouched. */
+.fp-web .fp-web__pop-scrim {
+  background: var(--fp-web-overlay-scrim);
+  backdrop-filter: blur(6px) saturate(115%);
+  -webkit-backdrop-filter: blur(6px) saturate(115%);
+}
+.fp-web .fp-web__pop {
+  background:
+    linear-gradient(165deg, var(--fp-web-sheen) 0%, transparent 45%),
+    var(--fp-web-overlay);
+  backdrop-filter: blur(48px) saturate(190%);
+  -webkit-backdrop-filter: blur(48px) saturate(190%);
+  border: 1px solid var(--fp-web-edge);
+  box-shadow:
+    0 24px 60px var(--fp-shadow),
+    inset 0 1px 0 var(--fp-web-inner);
+}
+.fp-web .fp-modal-scrim {
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+.fp-web .fp-modal {
+  background:
+    linear-gradient(165deg, var(--fp-web-sheen) 0%, transparent 45%),
+    var(--fp-web-overlay) !important;
+  backdrop-filter: blur(48px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(190%) !important;
+  border: 1px solid var(--fp-web-edge) !important;
+  box-shadow: 0 30px 70px rgba(2, 6, 14, 0.35) !important;
+}
+
+/* ── Settings sub-widgets (sheets inside FitModal) ───────────── */
+.fp-sheet__rows { display: flex; flex-direction: column; }
+.fp-sheet__rows .fp-row:last-child { border-bottom: none; }
+.fp-web .fp-row__label.is-active { color: var(--fp-accent); font-weight: 700; }
+.fp-sheet__check { font-size: 15px; font-weight: 800; color: var(--fp-accent); }
+.fp-sheet__note {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--fp-track);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--fp-muted);
+  text-align: center;
+}
+.fp-sheet__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--fp-muted);
+}
+.fp-sheet__ok { font-weight: 700; color: var(--fp-accent); }
+.fp-sheet__label {
+  margin: 16px 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fp-muted);
+}
+.fp-sheet__faq { border-bottom: 1px solid var(--fp-track); }
+.fp-sheet__faq:last-child { border-bottom: none; }
+.fp-sheet__faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 4px;
+  background: none;
+  border: none;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--fp-text);
+  text-align: left;
+  cursor: pointer;
+}
+.fp-sheet__faq-q:hover { color: var(--fp-accent); }
+.fp-sheet__faq-ico { font-size: 17px; font-weight: 700; line-height: 1; color: var(--fp-accent); }
+.fp-sheet__faq-a {
+  margin: 0 0 13px;
+  padding: 0 4px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--fp-muted);
+}
+.fp-sheet__contact {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border);
+  text-decoration: none;
+  transition: transform 140ms, background 160ms;
+}
+.fp-sheet__contact:hover { transform: translateY(-1px); background: var(--fp-glass); }
+.fp-sheet__about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 16px;
+}
+.fp-sheet__about-name { font-size: 18px; font-weight: 800; color: var(--fp-text); }
+.fp-sheet__about-tag { font-size: 12.5px; color: var(--fp-muted); }
+
+/* ── Account sheets: device sync + goals ─────────────────────── */
+.fp-sheet__strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--fp-glass-2);
+  border: 1px solid var(--fp-border);
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.fp-sheet__bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--fp-field);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.fp-sheet__bar-fill { height: 100%; border-radius: 2px; transition: width 0.15s ease-out; }
+.fp-sync-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fp-sync-dev {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 16px 14px;
+  border-radius: 16px;
+  background: var(--fp-glass-2);
+  border: 1.5px solid var(--fp-field);
+  text-align: left;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
+}
+.fp-sync-dev:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px var(--fp-shadow-soft);
+}
+.fp-sync-dev.is-on {
+  border-color: var(--fp-accent);
+  transform: scale(1.02);
+  box-shadow: 0 8px 22px var(--fp-glow);
+}
+.fp-sync-dev__ico { font-size: 26px; margin-bottom: 6px; }
+.fp-sync-dev__name { font-size: 13px; font-weight: 700; color: var(--fp-text); }
+.fp-sync-dev__sub { font-size: 11px; color: var(--fp-muted); }
+.fp-sync-dev__st { font-size: 10px; font-weight: 700; margin-top: 4px; }
+.fp-goals-grid { display: flex; flex-direction: column; gap: 10px; }
+.fp-goal-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 16px;
+  background: var(--fp-glass-2);
+  border: 1.5px solid var(--fp-field);
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Outfit', sans-serif;
+  transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+.fp-goal-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px var(--fp-shadow-soft); }
+.fp-goal-card.is-on {
+  border-color: var(--gc, var(--fp-accent));
+  box-shadow: 0 6px 18px var(--fp-shadow-soft);
+}
+.fp-goal-card__ico {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+}
+.fp-goal-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fp-goal-card__title { font-size: 14px; font-weight: 700; color: var(--fp-text); }
+.fp-goal-card__sub { font-size: 11.5px; color: var(--fp-muted); }
+.fp-goal-card__check { font-size: 15px; font-weight: 800; color: var(--gc, var(--fp-accent)); }
+
+.fp-auth__inner--xl { max-width: 1280px; }
+
+@media (min-width: 1280px) {
+  .fp-auth { padding: 56px 48px; }
+  .fp-auth__head { margin-bottom: 30px; }
+  .fp-auth__head h2 { font-size: 36px; }
+  .fp-auth__head p { font-size: 15.5px; }
+  .fp-auth__head-ico { font-size: 54px; }
+  .fp-auth__card { padding: 36px; border-radius: 28px; }
+  .fp-auth__label { font-size: 12.5px; }
+  .fp-auth__panel { padding: 38px; border-radius: 30px; }
+  .fp-auth__panel-head { margin-bottom: 26px; }
+  .fp-auth__panel-head h2 { font-size: 31px; }
+  .fp-auth__split {
+    grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+    gap: 64px;
+  }
+  .fp-auth__brand-name { font-size: 44px; }
+  .fp-auth__brand-tag { font-size: 13px; letter-spacing: 4px; }
+
+  /* Walkthrough — full-size desktop stage */
+  .fp-auth__onboard { gap: 48px; }
+  .fp-auth__mini-brand { font-size: 17px; }
+  .fp-auth__skip { font-size: 15px; }
+  .fp-auth__onboard-body {
+    grid-template-columns: minmax(0, 560px) minmax(0, 1fr);
+    gap: 78px;
+    min-height: 560px;
+  }
+  .fp-auth__onboard-art { max-width: 460px; }
+  .fp-auth__onboard-art > div { transform: scale(1.18); }
+  .fp-auth__onboard-text h2 {
+    font-size: 48px;
+    letter-spacing: -1.6px;
+    margin: 18px 0 14px;
+  }
+  .fp-auth__onboard-text p { font-size: 18px; line-height: 1.6; max-width: 46ch; }
+  .fp-auth__dots { gap: 10px; }
+  .fp-auth__dots span { width: 10px; height: 10px; }
+  .fp-auth__dots span.is-active { width: 36px; }
+  .fp-auth__onboard-actions { margin-top: 42px; }
+  .fp-auth__onboard-actions .fp-web-btn--grow { min-width: 300px; }
+  .fp-auth__onboard-actions .fp-web-btn--back { min-width: 168px; }
+  button.fp-web-btn,
+  button.fp-web-btn.fp-web-btn--grow { min-height: 62px; font-size: 16px; padding: 18px 34px; }
+
+  /* Splash + setup steps breathe more on a big screen */
+  .fp-auth__splash-card { padding: 72px 110px; border-radius: 40px; }
+  .fp-auth__splash-name { font-size: 68px; }
+  .fp-auth__splash-tag { font-size: 13.5px; letter-spacing: 5px; }
+  .fp-auth__splash-ring { width: 62px; height: 62px; }
+  .fp-auth__form-grid { gap: 0 20px; }
+  .fp-auth__field { margin-bottom: 14px; }
+  .fp-auth__field input { padding: 15px 18px 15px 48px; font-size: 15.5px; }
+  .fp-auth__goals { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .fp-auth__goal { padding: 18px 22px; }
+  .fp-auth__goal-title { font-size: 16px; }
+  .fp-auth__devices { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+  .fp-auth__status-text { font-size: 15px; }
+  .fp-auth__actions { max-width: 520px; margin-top: 28px; }
+
+  /* Login / Create Account: the roomiest card in the app — wider brand
+     column, generous padding and a taller, vertically centred form. */
+  .fp-auth__inner--auth { max-width: 1160px; }
+  .fp-auth__split--auth {
+    grid-template-columns: minmax(320px, 470px) minmax(0, 1fr);
+    gap: 76px;
+  }
+  .fp-auth__panel--auth {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 560px;
+    padding: 54px 50px;
+    border-radius: 36px;
+  }
+  .fp-auth__panel--auth .fp-auth__panel-head { margin-bottom: 30px; }
+  .fp-auth__panel--auth .fp-auth__panel-head h2 { font-size: 37px; }
+  .fp-auth__panel--auth .fp-auth__panel-head p { font-size: 15.5px; }
+  .fp-auth__panel--auth .fp-auth__field { margin-bottom: 16px; }
+  .fp-auth__panel--auth .fp-auth__field-ico { left: 19px; font-size: 18px; }
+  .fp-auth__panel--auth .fp-auth__field input {
+    padding: 17px 20px 17px 52px;
+    font-size: 15.5px;
+    border-radius: 17px;
+  }
+  .fp-auth__panel--auth .fp-auth__link { font-size: 14.5px; }
+  .fp-auth__panel--auth .fp-auth__divider { margin: 20px 0; font-size: 12.5px; }
+  .fp-auth__panel--auth .fp-auth__social-btn { min-height: 60px; }
+  .fp-auth__panel--auth .fp-auth__social-btn img { width: 42px; height: 36px; }
+  .fp-auth__panel--auth .fp-auth__switch { margin-top: 26px; font-size: 15px; }
+}
+
+/* Tall desktop windows can afford an even taller login / sign-up card.
+   (Split out so short laptops never have to scroll the form.) */
+@media (min-width: 1280px) and (min-height: 900px) {
+  .fp-auth__panel--auth { min-height: 680px; }
 }

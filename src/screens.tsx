@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, type CSSProperties } from 'react'
+﻿import { useState, useEffect, type CSSProperties } from 'react'
 import googleLogo from "@/imports/google-logo.png";
 import appleLogo from "@/imports/apple-logo.png";
 
@@ -9,9 +9,28 @@ import {
 
 import {
   useTheme, FitModal, JoinChallengeWidget, InvitePeopleWidget, ShareProgressWidget,
-  EditProfile, Subscription, PersonalRecords, PrivacySecurity,
+  EditProfile, Subscription, PersonalRecords, PrivacySecurity, useDeviceSync,
   type ChallengeInfo, type ProfileData,
 } from './features'
+
+/* Shared product data — the same module the web dashboard reads
+   (src/data.ts), so the phone and web layouts can never drift. */
+import {
+  MAIN_NAV, NOTIFICATIONS, QUICK_ACTIONS, HOME_PROFILE, TODAY_STEPS, WEEK_STEPS, WEEK_LABELS,
+  STEPS_DELTA, STEPS_GOAL_LABEL, HOME_METRICS, HOME_WORKOUT, HOME_CHALLENGE, AI_INSIGHTS,
+  PROGRESS_STATS, WEIGHT_TREND, WEIGHT_SUMMARY, BMI, AI_MONTHLY_SUMMARY, BADGES,
+  ACTIVITY_TABS, ACTIVITY_STEPS, heartRateSeries, SLEEP_STAGES, ACTIVITY_STEPS_HEADER,
+  ACTIVITY_STEP_SUMMARY, ACTIVITY_HEART, ACTIVITY_HEART_SUMMARY, ACTIVITY_CALORIE_TOTALS,
+  NUTRITION_PIE, NUTRITION_SPLIT, ACTIVITY_SLEEP_HEADER, ACTIVITY_SLEEP_SUMMARY,
+  ACTIVITY_STRESS, ACTIVITY_MEDITATION, WATER_START_GLASSES, WATER_TOTAL_GLASSES,
+  WATER_GOAL_LABEL, litersFromGlasses, COMMUNITY_CHALLENGE, COMMUNITY_PEOPLE, COMMUNITY_STATS,
+  ACTIVE_CHALLENGES, LEADERBOARD, LEADERBOARD_TAG, FEED_POSTS, WORKOUT_CATEGORIES,
+  ACTIVE_WORKOUT, RECENT_WORKOUTS, ACCOUNT_PROFILE, ACCOUNT_CARD, ACCOUNT_STATS,
+  PERSONAL_RECORDS, PRIVACY_SETTINGS, ACCOUNT_MENU, APP_FOOTER, SETTINGS_SECTIONS,
+  BRAND, SYNC_DEVICES, SYNC_STATUS_LABELS, SETUP_GOALS, GOAL_DEFAULT_SELECTION,
+  PERMISSION_ITEMS, PERMISSION_DEFAULTS, PROFILE_FIELDS, GENDER_OPTIONS, FITNESS_LEVELS,
+  PROFILE_LEVEL_DEFAULT,
+} from './data'
 
 
 /* ─── Design Tokens ───────────────────────────────────────── */
@@ -21,7 +40,6 @@ const CYAN = '#0891B2'
 const ORANGE = '#EA580C'
 const RED = '#DC2626'
 const PURPLE = '#7C3AED'
-const PINK = '#DB2777'
 const TXT = 'var(--fp-text)'
 const TXT2 = 'var(--fp-text-2)'
 const MUTED = 'var(--fp-muted)'
@@ -33,7 +51,7 @@ const BG = 'var(--fp-bg)'
 /* ─── Animation hooks ────────────────────────────────────── */
 
 /* ─── Animation hooks ────────────────────────────────────── */
-function useCountUp(target: number, duration = 1200, delay = 0) {
+export function useCountUp(target: number, duration = 1200, delay = 0) {
   const [val, setVal] = useState(0)
   useEffect(() => {
     const t = setTimeout(() => {
@@ -127,12 +145,7 @@ export function Logo({ size = 40 }: { size?: number }) {
 
 /* ─── Bottom Nav ──────────────────────────────────────────── */
 export function BottomNav({ active = 'home', onNav }: { active?: string; onNav?: (s: string) => void }) {
-  const tabs = [
-    { id: 'home', emoji: '🏠', label: 'Home' },
-    { id: 'progress', emoji: '📊', label: 'Progress' },
-    { id: 'community', emoji: '👥', label: 'Community' },
-    { id: 'account', emoji: '👤', label: 'Account' },
-  ]
+  const tabs = MAIN_NAV
   const activeIdx = tabs.findIndex(t => t.id === active)
   const tabW = 100 / tabs.length
 
@@ -252,7 +265,7 @@ function FInput({ placeholder, type = 'text', icon, value, onChange }: any) {
   )
 }
 
-function Tag({ children, color = G }: any) {
+export function Tag({ children, color = G }: any) {
   return (
     <span style={{
       background: `${color}18`, color,
@@ -263,7 +276,7 @@ function Tag({ children, color = G }: any) {
   )
 }
 
-function Toggle({ on = false, onToggle }: { on?: boolean; onToggle?: () => void }) {
+export function Toggle({ on = false, onToggle }: { on?: boolean; onToggle?: () => void }) {
   return (
     <div onClick={onToggle} style={{
       width: 46, height: 26, borderRadius: 13, cursor: 'pointer', transition: 'background 0.25s',
@@ -335,10 +348,10 @@ export function SplashScreen({ onNav }: { onNav?: (s: string) => void }) {
         </div>
 
         <h1 style={{ margin: 0, fontSize: 44, fontWeight: 900, letterSpacing: -1.5, color: TXT, animation: 'fade-slide-up 300ms ease-out 250ms both' }}>
-          FitPulse
+          {BRAND.name}
         </h1>
         <p style={{ margin: '10px 0 0', fontSize: 12, fontWeight: 600, letterSpacing: 3.5, color: MUTED, textTransform: 'uppercase', animation: 'fade-slide-up 300ms ease-out 350ms both' }}>
-          Track. Improve. Achieve.
+          {BRAND.tagline}
         </p>
       </div>
 
@@ -357,7 +370,7 @@ export function SplashScreen({ onNav }: { onNav?: (s: string) => void }) {
       </div>
 
       <p style={{ position: 'absolute', bottom: 36, fontSize: 11, color: LIGHTER, zIndex: 2, fontWeight: 500, animation: 'fade-slide-up 300ms ease-out 550ms both' }}>
-        © 2025 FitPulse Inc.
+        {BRAND.copyright}
       </p>
     </div>
   )
@@ -366,7 +379,7 @@ export function SplashScreen({ onNav }: { onNav?: (s: string) => void }) {
 /* ───────────────────────────────────────────────────────────
    SCREENS 2–4 — ONBOARDING
    ─────────────────────────────────────────────────────────── */
-const SLIDES = [
+export const SLIDES = [
   {
     title: 'Track Your Health Easily',
     subtitle: "Monitor steps, heart rate, calories & sleep all in one place.",
@@ -603,7 +616,7 @@ export function SignUpScreen({ onNav }: { onNav?: (s: string) => void }) {
    SCREEN 7 — PROFILE SETUP
    ─────────────────────────────────────────────────────────── */
 export function ProfileSetupScreen({ onNav }: { onNav?: (s: string) => void }) {
-  const [level, setLevel] = useState('intermediate')
+  const [level, setLevel] = useState(PROFILE_LEVEL_DEFAULT)
 
   return (
     <div style={{ ...scr, padding: '52px 24px 40px', position: 'relative' }}>
@@ -634,17 +647,12 @@ export function ProfileSetupScreen({ onNav }: { onNav?: (s: string) => void }) {
         </div>
 
         <div style={{ ...gl(0.78, 20, 22), padding: '18px 18px', marginBottom: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.07)' }}>
-          {[
-            { placeholder: 'Full Name', icon: '👤' },
-            { placeholder: 'Age', icon: '🎂', type: 'number' },
-            { placeholder: 'Height (cm)', icon: '📏', type: 'number' },
-            { placeholder: 'Weight (kg)', icon: '⚖️', type: 'number' },
-          ].map((f, i) => <FInput key={i} {...f} />)}
+          {PROFILE_FIELDS.map((f, i) => <FInput key={i} {...f} />)}
 
           <div style={{ marginBottom: 4 }}>
             <label style={{ fontSize: 11.5, color: MUTED, marginBottom: 6, display: 'block', fontWeight: 600 }}>Gender</label>
             <div style={{ display: 'flex', gap: 8 }}>
-              {['Male', 'Female', 'Other'].map(g => (
+              {GENDER_OPTIONS.map(g => (
                 <button key={g} style={{
                   ...gl(0.7, 12, 12), flex: 1, padding: '11px 0', fontSize: 13, fontWeight: 600,
                   color: TXT2, cursor: 'pointer', border: `1px solid ${SOFT}`,
@@ -658,11 +666,7 @@ export function ProfileSetupScreen({ onNav }: { onNav?: (s: string) => void }) {
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 12, color: MUTED, marginBottom: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>Fitness Level</div>
           <div style={{ display: 'flex', gap: 10 }}>
-            {[
-              { id: 'beginner', label: '🌱 Beginner', color: LIME },
-              { id: 'intermediate', label: '⚡ Intermediate', color: CYAN },
-              { id: 'advanced', label: '🔥 Advanced', color: ORANGE },
-            ].map(lv => (
+            {FITNESS_LEVELS.map(lv => (
               <button key={lv.id} onClick={() => setLevel(lv.id)} style={{
                 flex: 1, padding: '13px 4px', borderRadius: 14, fontSize: 11, fontWeight: 700,
                 cursor: 'pointer', fontFamily: "'Outfit', sans-serif", transition: 'all 0.2s',
@@ -686,58 +690,13 @@ export function ProfileSetupScreen({ onNav }: { onNav?: (s: string) => void }) {
    ─────────────────────────────────────────────────────────── */
 type SyncSt = 'idle' | 'searching' | 'found' | 'connecting' | 'syncing' | 'connected'
 
-const SYNC_LABELS: Record<SyncSt, string> = {
-  idle: 'Tap a device to connect',
-  searching: '🔍 Searching...',
-  found: '📡 Device Found!',
-  connecting: '🔗 Connecting...',
-  syncing: '⚡ Syncing...',
-  connected: '✅ Connected!',
-}
+const SYNC_LABELS = SYNC_STATUS_LABELS
 
 export function DeviceSyncScreen({ onNav }: { onNav?: (s: string) => void }) {
-  const [syncSt, setSyncSt] = useState<SyncSt>('idle')
-  const [syncDevice, setSyncDevice] = useState<number | null>(null)
-  const [syncPct, setSyncPct] = useState(0)
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+  /* State machine shared with the web Device Sync screen (features.tsx) */
+  const { syncSt, syncDevice, syncPct, startSync, isConnected } = useDeviceSync()
 
-  const devices = [
-    { icon: '⌚', name: 'Apple Watch', sub: 'Series 9' },
-    { icon: '⌚', name: 'Samsung Watch', sub: 'Galaxy 6' },
-    { icon: '🏃', name: 'Fitbit', sub: 'Charge 6' },
-    { icon: '🗺️', name: 'Garmin', sub: 'Forerunner 265' },
-    { icon: '📱', name: 'Mi Band', sub: 'Band 8 Pro' },
-    { icon: '⌚', name: 'Smartwatch', sub: 'Generic BLE' },
-  ]
-
-  const startSync = (i: number) => {
-    if (syncSt === 'searching' || syncSt === 'connecting' || syncSt === 'syncing') return
-    timersRef.current.forEach(clearTimeout)
-    timersRef.current = []
-    setSyncDevice(i)
-    setSyncPct(0)
-    setSyncSt('searching')
-    timersRef.current.push(setTimeout(() => setSyncSt('found'), 700))
-    timersRef.current.push(setTimeout(() => setSyncSt('connecting'), 1500))
-    timersRef.current.push(setTimeout(() => setSyncSt('syncing'), 2300))
-    timersRef.current.push(setTimeout(() => { setSyncSt('connected'); setSyncPct(100) }, 3400))
-  }
-
-  useEffect(() => {
-    if (syncSt !== 'syncing') return
-    setSyncPct(0)
-    let pct = 0
-    const iv = setInterval(() => {
-      pct = Math.min(100, pct + 5)
-      setSyncPct(pct)
-      if (pct >= 100) clearInterval(iv)
-    }, 55)
-    return () => clearInterval(iv)
-  }, [syncSt])
-
-  useEffect(() => () => { timersRef.current.forEach(clearTimeout) }, [])
-
-  const isConnected = syncSt === 'connected'
+  const devices = SYNC_DEVICES
   const statusColor = isConnected ? G : syncSt === 'idle' ? MUTED : CYAN
 
   return (
@@ -815,15 +774,9 @@ export function DeviceSyncScreen({ onNav }: { onNav?: (s: string) => void }) {
    SCREEN 9 — GOAL SELECTION
    ─────────────────────────────────────────────────────────── */
 export function GoalSelectionScreen({ onNav }: { onNav?: (s: string) => void }) {
-  const [selected, setSelected] = useState<number[]>([2])
+  const [selected, setSelected] = useState<number[]>(GOAL_DEFAULT_SELECTION)
 
-  const goals = [
-    { icon: '⚖️', title: 'Lose Weight', sub: 'Burn fat & slim down', color: ORANGE },
-    { icon: '💪', title: 'Build Muscle', sub: 'Gain strength & mass', color: CYAN },
-    { icon: '🏃', title: 'Stay Active', sub: '10k+ steps every day', color: G },
-    { icon: '❤️', title: 'Improve Cardio', sub: 'Boost endurance', color: RED },
-    { icon: '🥗', title: 'Healthy Lifestyle', sub: 'Balanced wellness', color: PURPLE },
-  ]
+  const goals = SETUP_GOALS
 
   const toggle = (i: number) => setSelected(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i])
 
@@ -880,15 +833,10 @@ export function GoalSelectionScreen({ onNav }: { onNav?: (s: string) => void }) 
    SCREEN 10 — PERMISSIONS
    ─────────────────────────────────────────────────────────── */
 export function PermissionsScreen({ onNav }: { onNav?: (s: string) => void }) {
-  const [perms, setPerms] = useState({ notif: true, health: true, location: false, bt: true })
+  const [perms, setPerms] = useState(PERMISSION_DEFAULTS)
   const toggle = (k: string) => setPerms(p => ({ ...p, [k]: !(p as any)[k] }))
 
-  const items = [
-    { key: 'notif', icon: '🔔', title: 'Notifications', sub: 'Reminders, achievements & challenges', color: ORANGE },
-    { key: 'health', icon: '❤️', title: 'Health Data', sub: 'Steps, heart rate & sleep tracking', color: RED },
-    { key: 'location', icon: '📍', title: 'Location', sub: 'Route mapping & outdoor workouts', color: G },
-    { key: 'bt', icon: '🔵', title: 'Bluetooth', sub: 'Connect wearables & smart devices', color: CYAN },
-  ]
+  const items = PERMISSION_ITEMS
 
   return (
     <div style={{ ...scr, padding: '52px 24px 40px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -933,12 +881,7 @@ export function PermissionsScreen({ onNav }: { onNav?: (s: string) => void }) {
 /* Notification panel — slides down from top of home screen */
 function NotificationPanel({ onClose }: { onClose: () => void }) {
   const theme = useTheme()
-  const items = [
-    { icon: '🏆', title: 'Challenge Complete!', msg: 'You finished the Weekly 70K Steps challenge.', time: '2m ago', color: ORANGE },
-    { icon: '👥', title: 'Rahul liked your post', msg: '"5K personal best" got 14 reactions!', time: '18m ago', color: G },
-    { icon: '🎯', title: 'Daily Goal Reached', msg: 'You hit 10,000 steps today. Keep it up!', time: '1h ago', color: CYAN },
-    { icon: '❤️', title: 'Heart Rate Alert', msg: 'Resting HR improved: 72 → 68 BPM this week.', time: '3h ago', color: RED },
-  ]
+  const items = NOTIFICATIONS
   return (
     <>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 19, background: 'rgba(0,0,0,0.08)' }} />
@@ -968,8 +911,8 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
 export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
   const [fab, setFab] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
-  const stepCount = useCountUp(12847, 1400, 400)
-  const stepsData = [{ v: 6200 }, { v: 8100 }, { v: 7400 }, { v: 9800 }, { v: 8600 }, { v: 11200 }, { v: 12847 }]
+  const stepCount = useCountUp(TODAY_STEPS, 1400, 400)
+  const stepsData = WEEK_STEPS
 
   return (
     <div style={{ ...scr, overflow: 'hidden' }}>
@@ -985,15 +928,15 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
         <Animated delay={60}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-              <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg,${G},${CYAN})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, boxShadow: `0 4px 14px ${G}40` }}>👩‍🦱</div>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg,${G},${CYAN})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, boxShadow: `0 4px 14px ${G}40` }}>{HOME_PROFILE.avatar}</div>
               <div>
-                <div style={{ fontSize: 12, color: MUTED }}>Good Morning 👋</div>
-                <div style={{ fontSize: 17, fontWeight: 800, color: TXT }}>Ananya</div>
+                <div style={{ fontSize: 12, color: MUTED }}>{HOME_PROFILE.greeting}</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: TXT }}>{HOME_PROFILE.name}</div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <div style={{ ...gl(0.82, 12, 14), padding: '5px 10px', fontSize: 11, fontWeight: 700, color: ORANGE, display: 'flex', alignItems: 'center', gap: 4 }}>
-                🔥 <span>14 streak</span>
+                🔥 <span>{HOME_PROFILE.streak}</span>
               </div>
               <div
               onClick={() => setNotifOpen(n => !n)}
@@ -1015,9 +958,9 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
                 <div style={{ fontSize: 34, fontWeight: 900, color: TXT, letterSpacing: -1 }}>
                   {stepCount.toLocaleString()}
                 </div>
-                <div style={{ fontSize: 11, color: G, fontWeight: 700 }}>↑ 28% vs yesterday</div>
+                <div style={{ fontSize: 11, color: G, fontWeight: 700 }}>{STEPS_DELTA}</div>
               </div>
-              <Tag color={G}>128% Goal</Tag>
+              <Tag color={G}>{STEPS_GOAL_LABEL}</Tag>
             </div>
             <ResponsiveContainer width="100%" height={58}>
               <RBarChart data={stepsData} barGap={3} barCategoryGap="18%">
@@ -1027,7 +970,7 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
               </RBarChart>
             </ResponsiveContainer>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-              {['M','T','W','T','F','S','S'].map((d, i) => (
+              {WEEK_LABELS.map((d, i) => (
                 <span key={i} style={{ fontSize: 10, color: i === 6 ? G : MUTED, fontWeight: i === 6 ? 700 : 400, flex: 1, textAlign: 'center' }}>{d}</span>
               ))}
             </div>
@@ -1043,20 +986,20 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
                   <span style={{ animation: 'hr-pulse 1.2s ease-in-out infinite', display: 'inline-block' }}>❤️</span>
                 </div>
               </div>
-              <div style={{ fontSize: 10.5, color: MUTED, fontWeight: 600, marginBottom: 2 }}>Heart Rate</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: TXT, lineHeight: 1.1 }}>72 <span style={{ fontSize: 11, fontWeight: 500, color: MUTED }}>BPM</span></div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>Resting · Normal</div>
+              <div style={{ fontSize: 10.5, color: MUTED, fontWeight: 600, marginBottom: 2 }}>{HOME_METRICS.heart.label}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: TXT, lineHeight: 1.1 }}>{HOME_METRICS.heart.value} <span style={{ fontSize: 11, fontWeight: 500, color: MUTED }}>{HOME_METRICS.heart.unit}</span></div>
+              <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>{HOME_METRICS.heart.sub}</div>
             </div>
-            <StatCard icon="🔥" label="Calories" value="1,847" unit="kcal" color={ORANGE} sub="482 remaining" />
+            <StatCard {...HOME_METRICS.calories} />
           </div>
         </Animated>
 
         {/* 5 - Stats row 2: water + sleep + stress */}
         <Animated delay={340}>
           <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-            <StatCard icon="💧" label="Water" value="1.8" unit="L" color={CYAN} sub="Goal: 2.5L" />
-            <StatCard icon="😴" label="Sleep" value="7.4" unit="hrs" color={PURPLE} sub="Deep 2.1h" />
-            <StatCard icon="🧠" label="Stress" value="Low" unit="" color={LIME} sub="Score 24/100" />
+            <StatCard {...HOME_METRICS.water} />
+            <StatCard {...HOME_METRICS.sleep} />
+            <StatCard {...HOME_METRICS.stress} />
           </div>
         </Animated>
 
@@ -1073,11 +1016,7 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
               <div style={{ fontSize: 14, fontWeight: 700, color: TXT }}>AI Insights</div>
               <Tag color={CYAN}>New</Tag>
             </div>
-            {[
-              "Great progress this week! Hit step goal 5 days in a row.",
-              "Heart rate improved by 8% — cardio sessions are working!",
-              "Consider a rest day — recovery maximizes muscle gains.",
-            ].map((msg, i) => (
+            {AI_INSIGHTS.map((msg, i) => (
               <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 7, alignItems: 'flex-start', animation: `fade-slide-up 300ms ease-out ${500 + i * 80}ms both` }}>
                 <span style={{ fontSize: 12, color: G, marginTop: 2 }}>●</span>
                 <p style={{ margin: 0, fontSize: 12.5, color: TXT2, lineHeight: 1.5 }}>{msg}</p>
@@ -1090,16 +1029,16 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
         <Animated delay={520}>
           <div style={{ ...gl(0.8, 18, 20), padding: '14px 16px', marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: TXT }}>🏆 Weekly Challenge</div>
-              <Tag color={ORANGE}>3 days left</Tag>
+              <div style={{ fontSize: 14, fontWeight: 700, color: TXT }}>{HOME_CHALLENGE.title}</div>
+              <Tag color={ORANGE}>{HOME_CHALLENGE.tag}</Tag>
             </div>
-            <div style={{ fontSize: 12, color: MUTED, marginBottom: 8 }}>10,000 Steps Every Day</div>
+            <div style={{ fontSize: 12, color: MUTED, marginBottom: 8 }}>{HOME_CHALLENGE.name}</div>
             <div style={{ height: 6, borderRadius: 3, background: 'var(--fp-track)', marginBottom: 6 }}>
-              <div style={{ width: '72%', height: '100%', borderRadius: 3, background: `linear-gradient(90deg,${G},${LIME})` }} />
+              <div style={{ width: `${HOME_CHALLENGE.pct}%`, height: '100%', borderRadius: 3, background: `linear-gradient(90deg,${G},${LIME})` }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-              <span style={{ color: MUTED, fontWeight: 500 }}>72% completed</span>
-              <span style={{ color: G, fontWeight: 700 }}>1,247 participants</span>
+              <span style={{ color: MUTED, fontWeight: 500 }}>{HOME_CHALLENGE.pct}% completed</span>
+              <span style={{ color: G, fontWeight: 700 }}>{HOME_CHALLENGE.participants}</span>
             </div>
           </div>
         </Animated>
@@ -1115,8 +1054,8 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 42, height: 42, borderRadius: 13, background: `${G}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🏋️</div>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: TXT }}>Start Workout</div>
-                <div style={{ fontSize: 11, color: MUTED }}>Today: Upper body strength</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: TXT }}>{HOME_WORKOUT.title}</div>
+                <div style={{ fontSize: 11, color: MUTED }}>{HOME_WORKOUT.sub}</div>
               </div>
             </div>
             <span style={{ fontSize: 18, color: G }}>›</span>
@@ -1130,11 +1069,7 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
       <div style={{ position: 'absolute', bottom: 96, right: 18, zIndex: 10 }}>
         {fab && (
           <div style={{ position: 'absolute', bottom: 58, right: 0, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
-            {[
-              { icon: '🍎', label: 'Log Meal', nav: 'activity' },
-              { icon: '🏋️', label: 'Log Workout', nav: 'workouts' },
-              { icon: '💧', label: 'Add Water', nav: 'addwater' },
-            ].map((a, i) => (
+            {QUICK_ACTIONS.map((a, i) => (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 animation: `fade-slide-up 250ms ease-out ${i * 60}ms both`,
@@ -1171,14 +1106,7 @@ export function HomeScreen({ onNav }: { onNav?: (s: string) => void }) {
 export function WorkoutsScreen({ onNav }: { onNav?: (s: string) => void }) {
   const [active, setActive] = useState(false)
 
-  const categories = [
-    { icon: '🏃', name: 'Running', cal: '450 kcal', color: ORANGE },
-    { icon: '🚶', name: 'Walking', cal: '180 kcal', color: G },
-    { icon: '🚴', name: 'Cycling', cal: '380 kcal', color: CYAN },
-    { icon: '🧘', name: 'Yoga', cal: '200 kcal', color: PURPLE },
-    { icon: '🏋️', name: 'Strength', cal: '320 kcal', color: RED },
-    { icon: '⚡', name: 'HIIT', cal: '580 kcal', color: PINK },
-  ]
+  const categories = WORKOUT_CATEGORIES
 
   return (
     <div style={{ ...scr, overflow: 'hidden' }}>
@@ -1204,14 +1132,14 @@ export function WorkoutsScreen({ onNav }: { onNav?: (s: string) => void }) {
             boxShadow: `0 8px 32px ${G}20`,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: G }}>🏃 Running · Active</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: G }}>{ACTIVE_WORKOUT.title}</div>
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: G, boxShadow: `0 0 8px ${G}`, animation: 'pulse-glow 1.5s infinite' }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 16 }}>
-              {[{ l: 'Duration', v: '24:38' }, { l: 'Calories', v: '287 kcal' }, { l: 'Distance', v: '3.2 km' }, { l: 'Pace', v: '7.8/km' }].map((s, i) => (
+              {ACTIVE_WORKOUT.stats.map((s, i) => (
                 <div key={i} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: TXT }}>{s.v}</div>
-                  <div style={{ fontSize: 9, color: MUTED }}>{s.l}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: TXT }}>{s.value}</div>
+                  <div style={{ fontSize: 9, color: MUTED }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -1236,11 +1164,7 @@ export function WorkoutsScreen({ onNav }: { onNav?: (s: string) => void }) {
 
         <div style={{ ...gl(0.78, 16, 18), padding: '14px 16px' }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: TXT, marginBottom: 12 }}>Recent Workouts</div>
-          {[
-            { icon: '🏃', name: 'Morning Run', time: 'Today 7:20 AM', cal: '412 kcal', dur: '38 min' },
-            { icon: '🏋️', name: 'Upper Body', time: 'Yesterday', cal: '298 kcal', dur: '52 min' },
-            { icon: '🧘', name: 'Yoga Flow', time: '2 days ago', cal: '145 kcal', dur: '30 min' },
-          ].map((w, i) => (
+          {RECENT_WORKOUTS.map((w, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 11, paddingBottom: i < 2 ? 11 : 0, borderBottom: i < 2 ? `1px solid var(--fp-track)` : 'none', marginBottom: i < 2 ? 11 : 0 }}>
               <div style={{ width: 38, height: 38, borderRadius: 11, background: `${G}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>{w.icon}</div>
               <div style={{ flex: 1 }}>
@@ -1267,17 +1191,17 @@ export function WorkoutsScreen({ onNav }: { onNav?: (s: string) => void }) {
 /* ───────────────────────────────────────────────────────────
    SCREEN 13 — ACTIVITY LOG
    ─────────────────────────────────────────────────────────── */
-function WaterTab() {
-  const [glasses, setGlasses] = useState(5)
-  const totalGlasses = 8
-  const liters = (glasses * 250 / 1000).toFixed(1)
+export function WaterTab() {
+  const [glasses, setGlasses] = useState(WATER_START_GLASSES)
+  const totalGlasses = WATER_TOTAL_GLASSES
+  const liters = litersFromGlasses(glasses)
   const pct = Math.round((glasses / totalGlasses) * 100)
 
   return (
     <div style={{ ...gl(0.85, 20, 22), padding: '22px' }}>
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <div style={{ fontSize: 48, fontWeight: 900, color: CYAN, letterSpacing: -1 }}>{liters}L</div>
-        <div style={{ fontSize: 13, color: MUTED, marginBottom: 8 }}>of 2.0L daily goal</div>
+        <div style={{ fontSize: 13, color: MUTED, marginBottom: 8 }}>{WATER_GOAL_LABEL}</div>
         <Tag color={pct >= 100 ? G : CYAN}>{pct}% completed</Tag>
       </div>
 
@@ -1310,30 +1234,13 @@ function WaterTab() {
 export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) => void; initialTab?: string }) {
   const [tab, setTab] = useState(initialTab ?? 'steps')
 
-  const tabs = [
-    { id: 'steps', label: '👟 Steps' },
-    { id: 'heart', label: '❤️ Heart' },
-    { id: 'calories', label: '🔥 Calories' },
-    { id: 'sleep', label: '😴 Sleep' },
-    { id: 'stress', label: '🧠 Stress' },
-    { id: 'water', label: '💧 Water' },
-  ]
+  const tabs = ACTIVITY_TABS
 
-  const stepData = [
-    { d: 'Mon', v: 8200 }, { d: 'Tue', v: 6100 }, { d: 'Wed', v: 9800 },
-    { d: 'Thu', v: 7400 }, { d: 'Fri', v: 11200 }, { d: 'Sat', v: 10400 }, { d: 'Sun', v: 12847 },
-  ]
+  const stepData = ACTIVITY_STEPS
 
-  const hrData = Array.from({ length: 20 }, (_, i) => ({
-    h: `${6 + i}h`, v: 58 + Math.round(Math.sin(i * 0.5) * 18 + (i % 3) * 6),
-  }))
+  const hrData = heartRateSeries()
 
-  const sleepData = [
-    { name: 'Light', value: 2.8, fill: CYAN },
-    { name: 'Deep', value: 2.1, fill: PURPLE },
-    { name: 'REM', value: 1.6, fill: G },
-    { name: 'Awake', value: 0.9, fill: ORANGE },
-  ]
+  const sleepData = SLEEP_STAGES
 
   return (
     <div style={{ ...scr, overflow: 'hidden' }}>
@@ -1369,14 +1276,14 @@ export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) =
             <div style={{ ...gl(0.85, 20, 22), padding: '18px', marginBottom: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>Today</div>
-                  <div style={{ fontSize: 34, fontWeight: 900, color: TXT, letterSpacing: -1 }}>12,847</div>
-                  <Tag color={G}>↑ 28% vs avg</Tag>
+                  <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>{ACTIVITY_STEPS_HEADER.label}</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: TXT, letterSpacing: -1 }}>{ACTIVITY_STEPS_HEADER.value}</div>
+                  <Tag color={G}>{ACTIVITY_STEPS_HEADER.tag}</Tag>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 12, color: MUTED }}>Goal</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: TXT }}>10,000</div>
-                  <div style={{ fontSize: 11, color: G, fontWeight: 700 }}>128%</div>
+                  <div style={{ fontSize: 12, color: MUTED }}>{ACTIVITY_STEPS_HEADER.goalLabel}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: TXT }}>{ACTIVITY_STEPS_HEADER.goal}</div>
+                  <div style={{ fontSize: 11, color: G, fontWeight: 700 }}>{ACTIVITY_STEPS_HEADER.goalPct}</div>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={90}>
@@ -1390,10 +1297,10 @@ export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) =
               </ResponsiveContainer>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              {[{ l: 'Avg Daily', v: '9,840', c: G }, { l: 'Best Day', v: '14,200', c: LIME }, { l: 'This Week', v: '65,947', c: CYAN }].map((s, i) => (
+              {ACTIVITY_STEP_SUMMARY.map((s, i) => (
                 <div key={i} style={{ ...gl(0.8, 14, 14), padding: '12px 10px', flex: 1, textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: s.c }}>{s.v}</div>
-                  <div style={{ fontSize: 9.5, color: MUTED, fontWeight: 500 }}>{s.l}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 9.5, color: MUTED, fontWeight: 500 }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -1405,9 +1312,9 @@ export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) =
             <div style={{ ...gl(0.85, 20, 22), padding: '18px', marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>Current</div>
-                  <div style={{ fontSize: 34, fontWeight: 900, color: TXT }}>72 <span style={{ fontSize: 14, color: MUTED }}>BPM</span></div>
-                  <Tag color={G}>Normal Zone</Tag>
+                  <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>{ACTIVITY_HEART.label}</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: TXT }}>{ACTIVITY_HEART.value} <span style={{ fontSize: 14, color: MUTED }}>{ACTIVITY_HEART.unit}</span></div>
+                  <Tag color={G}>{ACTIVITY_HEART.tag}</Tag>
                 </div>
                 <div style={{ width: 60, height: 60, borderRadius: '50%', background: `${RED}12`, border: `2px solid ${RED}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, animation: 'pulse-glow 1.2s ease-in-out infinite' }}>❤️</div>
               </div>
@@ -1425,10 +1332,10 @@ export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) =
               </ResponsiveContainer>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              {[{ l: 'Resting', v: '58 BPM', c: G }, { l: 'Average', v: '72 BPM', c: RED }, { l: 'Max Today', v: '142 BPM', c: ORANGE }].map((s, i) => (
+              {ACTIVITY_HEART_SUMMARY.map((s, i) => (
                 <div key={i} style={{ ...gl(0.8, 14, 14), padding: '12px 8px', flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: s.c }}>{s.v}</div>
-                  <div style={{ fontSize: 9.5, color: MUTED }}>{s.l}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 9.5, color: MUTED }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -1438,11 +1345,11 @@ export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) =
         {tab === 'calories' && (
           <>
             <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-              {[{ l: 'Consumed', v: '1,847', c: ORANGE, icon: '🍽️' }, { l: 'Burned', v: '682', c: G, icon: '🔥' }].map((s, i) => (
+              {ACTIVITY_CALORIE_TOTALS.map((s, i) => (
                 <div key={i} style={{ ...gl(0.85, 18, 20), padding: '16px', flex: 1, textAlign: 'center' }}>
                   <div style={{ fontSize: 26, marginBottom: 6 }}>{s.icon}</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: s.c }}>{s.v}</div>
-                  <div style={{ fontSize: 11, color: MUTED }}>{s.l} kcal</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 11, color: MUTED }}>{s.label} {s.unit}</div>
                 </div>
               ))}
             </div>
@@ -1450,16 +1357,16 @@ export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) =
               <div style={{ fontSize: 13, fontWeight: 700, color: TXT, marginBottom: 12 }}>Nutrition Breakdown</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <PieChart width={96} height={96}>
-                  <Pie data={[{v:45},{v:30},{v:25}]} cx={48} cy={48} innerRadius={26} outerRadius={46} dataKey="v" paddingAngle={3}>
+                  <Pie data={NUTRITION_PIE} cx={48} cy={48} innerRadius={26} outerRadius={46} dataKey="v" paddingAngle={3}>
                     {[ORANGE, CYAN, PURPLE].map((c, i) => <Cell key={i} fill={c} />)}
                   </Pie>
                 </PieChart>
                 <div>
-                  {[{ l: 'Carbs', v: '45%', c: ORANGE }, { l: 'Protein', v: '30%', c: CYAN }, { l: 'Fat', v: '25%', c: PURPLE }].map((n, i) => (
+                  {NUTRITION_SPLIT.map((n, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      <div style={{ width: 10, height: 10, borderRadius: 3, background: n.c, flexShrink: 0 }} />
-                      <span style={{ fontSize: 12.5, color: TXT2, fontWeight: 500 }}>{n.l}</span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: n.c, marginLeft: 'auto' }}>{n.v}</span>
+                      <div style={{ width: 10, height: 10, borderRadius: 3, background: n.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: 12.5, color: TXT2, fontWeight: 500 }}>{n.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: n.color, marginLeft: 'auto' }}>{n.value}</span>
                     </div>
                   ))}
                 </div>
@@ -1473,13 +1380,13 @@ export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) =
             <div style={{ ...gl(0.85, 20, 22), padding: '18px', marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>Last Night</div>
-                  <div style={{ fontSize: 34, fontWeight: 900, color: TXT }}>7h 24m</div>
-                  <Tag color={G}>Good Sleep</Tag>
+                  <div style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>{ACTIVITY_SLEEP_HEADER.label}</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: TXT }}>{ACTIVITY_SLEEP_HEADER.value}</div>
+                  <Tag color={G}>{ACTIVITY_SLEEP_HEADER.tag}</Tag>
                 </div>
                 <div style={{ textAlign: 'right', fontSize: 12, color: MUTED }}>
-                  <div style={{ fontWeight: 600 }}>Bedtime 10:42 PM</div>
-                  <div>Woke 6:06 AM</div>
+                  <div style={{ fontWeight: 600 }}>{ACTIVITY_SLEEP_HEADER.bedtime}</div>
+                  <div>{ACTIVITY_SLEEP_HEADER.woke}</div>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={80}>
@@ -1494,10 +1401,10 @@ export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) =
               </ResponsiveContainer>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              {[{ l: 'Deep Sleep', v: '2h 6m', c: PURPLE }, { l: 'REM Sleep', v: '1h 36m', c: G }, { l: 'Sleep Score', v: '84/100', c: CYAN }].map((s, i) => (
+              {ACTIVITY_SLEEP_SUMMARY.map((s, i) => (
                 <div key={i} style={{ ...gl(0.8, 12, 14), padding: '11px 8px', flex: 1, textAlign: 'center' }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: s.c }}>{s.v}</div>
-                  <div style={{ fontSize: 9.5, color: MUTED }}>{s.l}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 9.5, color: MUTED }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -1507,21 +1414,21 @@ export function ActivityLogScreen({ onNav, initialTab }: { onNav?: (s: string) =
         {tab === 'stress' && (
           <div style={{ ...gl(0.85, 20, 22), padding: '22px' }}>
             <div style={{ textAlign: 'center', marginBottom: 22 }}>
-              <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 4 }}>Current Stress Level</div>
-              <div style={{ fontSize: 52, fontWeight: 900, color: G }}>24</div>
-              <Tag color={G}>LOW STRESS</Tag>
+              <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, marginBottom: 4 }}>{ACTIVITY_STRESS.label}</div>
+              <div style={{ fontSize: 52, fontWeight: 900, color: G }}>{ACTIVITY_STRESS.score}</div>
+              <Tag color={G}>{ACTIVITY_STRESS.tag}</Tag>
             </div>
             <div style={{ position: 'relative', height: 10, borderRadius: 5, background: `linear-gradient(90deg,${G},${LIME},${ORANGE},${RED})`, marginBottom: 8 }}>
-              <div style={{ position: 'absolute', top: -4, left: '24%', width: 18, height: 18, borderRadius: '50%', background: 'var(--fp-surface)', border: `3px solid ${G}`, transform: 'translateX(-50%)', boxShadow: `0 2px 8px ${G}40` }} />
+              <div style={{ position: 'absolute', top: -4, left: `${ACTIVITY_STRESS.markerPct}%`, width: 18, height: 18, borderRadius: '50%', background: 'var(--fp-surface)', border: `3px solid ${G}`, transform: 'translateX(-50%)', boxShadow: `0 2px 8px ${G}40` }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: MUTED, fontWeight: 600, marginBottom: 22 }}>
-              <span>Low</span><span>Moderate</span><span>High</span><span>Very High</span>
+              {ACTIVITY_STRESS.levels.map(l => <span key={l}>{l}</span>)}
             </div>
             <div style={{ ...gl(0.78, 12, 14), padding: '13px 16px', display: 'flex', gap: 12, alignItems: 'center', border: `1px solid ${PURPLE}20` }}>
-              <span style={{ fontSize: 28 }}>🧘</span>
+              <span style={{ fontSize: 28 }}>{ACTIVITY_MEDITATION.icon}</span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: TXT }}>Meditation Suggestion</div>
-                <div style={{ fontSize: 11.5, color: MUTED }}>5-min breathing exercise · Tap to start</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: TXT }}>{ACTIVITY_MEDITATION.title}</div>
+                <div style={{ fontSize: 11.5, color: MUTED }}>{ACTIVITY_MEDITATION.sub}</div>
               </div>
             </div>
           </div>
@@ -1545,18 +1452,9 @@ export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
   const [likes, setLikes] = useState([false, false, false])
   const [flow, setFlow] = useState<null | 'join' | 'invite' | 'share'>(null)
   const [joined, setJoined] = useState(false)
-  const challenge: ChallengeInfo = {
-    title: 'Weekly 70K', desc: 'Walk 70,000 steps between Monday and Sunday. Sync your tracker to earn the finisher badge!', reward: '🏆 Finisher Badge', endDate: '3d left', total: 70000, progress: 72, img: '🏃',
-    participants: [{ name: 'Rahul K.', avatar: '🧑‍🦰' }, { name: 'Priya M.', avatar: '👩‍🦳' }, { name: 'Dev R.', avatar: '🧑‍🦱' }],
-  }
-  const people: { name: string; avatar: string; added: boolean }[] = [
-    { name: 'Rahul K.', avatar: '🧑‍🦰', added: true },
-    { name: 'Priya M.', avatar: '👩‍🦳', added: false },
-    { name: 'Dev R.', avatar: '🧑‍🦱', added: false },
-    { name: 'Meera S.', avatar: '👩', added: false },
-    { name: 'Arjun P.', avatar: '👨', added: false },
-  ]
-  const stats = [{ label: 'Steps', value: '50,430' }, { label: 'Streak', value: '12d' }, { label: 'Active min', value: '210' }]
+  const challenge: ChallengeInfo = COMMUNITY_CHALLENGE
+  const people = COMMUNITY_PEOPLE
+  const stats = COMMUNITY_STATS
 
   return (
     <div style={{ ...scr, overflow: 'hidden' }}>
@@ -1578,10 +1476,7 @@ export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
         {/* Challenges */}
         <div style={{ fontSize: 13, fontWeight: 700, color: TXT, marginBottom: 10 }}>Active Challenges</div>
         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-          {[
-            { title: 'Weekly 70K', icon: '👟', progress: 72, end: '3d left', color: G },
-            { title: 'Hydration Month', icon: '💧', progress: 54, end: '18d left', color: CYAN },
-          ].map((c, i) => (
+          {ACTIVE_CHALLENGES.map((c, i) => (
             <div key={i} style={{ ...gl(0.82, 16, 18), padding: '14px', flex: 1, boxShadow: '0 4px 16px rgba(0,0,0,0.07)' }}>
               <div style={{ width: 38, height: 38, borderRadius: 11, background: `${c.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 8 }}>{c.icon}</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: TXT }}>{c.title}</div>
@@ -1598,14 +1493,9 @@ export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
         <div style={{ ...gl(0.82, 18, 20), padding: '16px', marginBottom: 18, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: TXT }}>🏆 Leaderboard</div>
-            <Tag color={ORANGE}>This Week</Tag>
+            <Tag color={ORANGE}>{LEADERBOARD_TAG}</Tag>
           </div>
-          {[
-            { rank: '🥇', emoji: '👩‍🦱', name: 'Ananya S.', score: '86,420', highlight: true },
-            { rank: '🥈', emoji: '🧑‍🦰', name: 'Rahul K.', score: '79,100', highlight: false },
-            { rank: '🥉', emoji: '👩‍🦳', name: 'Priya M.', score: '71,850', highlight: false },
-            { rank: '8️⃣', emoji: '🧑', name: 'You', score: '65,947', highlight: false, you: true },
-          ].map((u, i) => (
+          {LEADERBOARD.map((u, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: (u as any).you ? '10px 8px' : '10px 0',
@@ -1624,11 +1514,7 @@ export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
 
         {/* Friends feed */}
         <div style={{ fontSize: 13, fontWeight: 700, color: TXT, marginBottom: 10 }}>Friends Activity</div>
-        {[
-          { emoji: '🧑‍🦰', name: 'Rahul K.', time: '2h ago', msg: 'Completed a 5K run in 28:30 🏃 Personal best!', l: 14 },
-          { emoji: '👩‍🦳', name: 'Priya M.', time: '4h ago', msg: 'Hit 100-day streak! 🔥 So proud of this milestone.', l: 42 },
-          { emoji: '🧑‍🦱', name: 'Dev R.', time: '6h ago', msg: 'New PR: Bench Press 100kg 💪 Strength is growing!', l: 28 },
-        ].map((post, i) => (
+        {FEED_POSTS.map((post, i) => (
           <div key={i} style={{ ...gl(0.78, 16, 18), padding: '14px', marginBottom: 10, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${G}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{post.emoji}</div>
@@ -1640,7 +1526,7 @@ export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
             <p style={{ margin: '0 0 10px', fontSize: 13, color: TXT2, lineHeight: 1.5 }}>{post.msg}</p>
             <div style={{ display: 'flex', gap: 14 }}>
               {[
-                { icon: likes[i] ? '❤️' : '🤍', label: `${post.l + (likes[i] ? 1 : 0)}`, action: () => setLikes(p => { const n = [...p]; n[i] = !n[i]; return n }) },
+                { icon: likes[i] ? '❤️' : '🤍', label: `${post.likes + (likes[i] ? 1 : 0)}`, action: () => setLikes(p => { const n = [...p]; n[i] = !n[i]; return n }) },
                 { icon: '💬', label: 'Comment', action: undefined },
                 { icon: '↗️', label: 'Share', action: undefined },
               ].map((a, j) => (
@@ -1677,19 +1563,9 @@ export function CommunityScreen({ onNav }: { onNav?: (s: string) => void }) {
 export function ProgressScreen({ onNav }: { onNav?: (s: string) => void }) {
   const [period, setPeriod] = useState<'week' | 'month'>('month')
 
-  const weightData = [
-    { d: 'W1', v: 74.2 }, { d: 'W2', v: 73.8 }, { d: 'W3', v: 73.1 },
-    { d: 'W4', v: 72.6 }, { d: 'W5', v: 72.0 }, { d: 'W6', v: 71.4 }, { d: 'Now', v: 71.0 },
-  ]
+  const weightData = WEIGHT_TREND
 
-  const badges = [
-    { icon: '🔥', label: '100 Day Streak', earned: true },
-    { icon: '👟', label: '500K Steps', earned: true },
-    { icon: '🏃', label: '50 Workouts', earned: true },
-    { icon: '💧', label: '30-Day Hydration', earned: false },
-    { icon: '💪', label: 'Strength Master', earned: false },
-    { icon: '🧘', label: 'Zen Master', earned: false },
-  ]
+  const badges = BADGES
 
   return (
     <div style={{ ...scr, overflow: 'hidden' }}>
@@ -1716,11 +1592,11 @@ export function ProgressScreen({ onNav }: { onNav?: (s: string) => void }) {
       <div style={{ padding: '0 18px' }}>
         {/* Stats row */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-          {[{ l: 'Workouts', v: '24', icon: '🏋️', c: G }, { l: 'Active Days', v: '19/30', icon: '📅', c: CYAN }, { l: 'Avg Steps', v: '9.8k', icon: '👟', c: LIME }].map((s, i) => (
+          {PROGRESS_STATS.map((s, i) => (
             <div key={i} style={{ ...gl(0.82, 14, 16), padding: '12px 8px', flex: 1, textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
               <div style={{ fontSize: 20, marginBottom: 4 }}>{s.icon}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: s.c }}>{s.v}</div>
-              <div style={{ fontSize: 10, color: MUTED }}>{s.l}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: MUTED }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -1730,9 +1606,9 @@ export function ProgressScreen({ onNav }: { onNav?: (s: string) => void }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: TXT }}>Weight Trend</div>
-              <div style={{ fontSize: 12, color: MUTED }}>Lost 3.2 kg this month</div>
+              <div style={{ fontSize: 12, color: MUTED }}>{WEIGHT_SUMMARY.sub}</div>
             </div>
-            <Tag color={G}>↓ 3.2 kg</Tag>
+            <Tag color={G}>{WEIGHT_SUMMARY.delta}</Tag>
           </div>
           <ResponsiveContainer width="100%" height={88}>
             <AreaChart data={weightData}>
@@ -1754,13 +1630,13 @@ export function ProgressScreen({ onNav }: { onNav?: (s: string) => void }) {
         <div style={{ ...gl(0.82, 16, 18), padding: '16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 54, height: 54, borderRadius: '50%', background: `${G}15`, border: `2px solid ${G}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>⚕️</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: TXT }}>BMI Score</div>
-            <div style={{ fontSize: 30, fontWeight: 900, color: G, lineHeight: 1.1 }}>22.4</div>
-            <Tag color={G}>Normal Weight</Tag>
+            <div style={{ fontSize: 13, fontWeight: 700, color: TXT }}>{BMI.label}</div>
+            <div style={{ fontSize: 30, fontWeight: 900, color: G, lineHeight: 1.1 }}>{BMI.value}</div>
+            <Tag color={G}>{BMI.tag}</Tag>
           </div>
           <div style={{ textAlign: 'right', fontSize: 11, color: MUTED }}>
-            <div style={{ fontWeight: 600 }}>178 cm</div>
-            <div>71.0 kg</div>
+            <div style={{ fontWeight: 600 }}>{BMI.height}</div>
+            <div>{BMI.weight}</div>
           </div>
         </div>
 
@@ -1770,11 +1646,11 @@ export function ProgressScreen({ onNav }: { onNav?: (s: string) => void }) {
           borderLeft: `4px solid ${CYAN}`,
           boxShadow: `0 4px 20px ${CYAN}15`,
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: CYAN, marginBottom: 8 }}>✨ AI Monthly Summary</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: CYAN, marginBottom: 8 }}>{AI_MONTHLY_SUMMARY.title}</div>
           <p style={{ margin: '0 0 10px', fontSize: 12.5, color: TXT2, lineHeight: 1.6 }}>
-            Outstanding month! 19/30 step goals hit, resting HR improved by 8 BPM, and 3.2kg lost. Cardio and strength both trending upward — keep it up! 💪
+            {AI_MONTHLY_SUMMARY.body}
           </p>
-          <Tag color={G}>Top 5% of users this month</Tag>
+          <Tag color={G}>{AI_MONTHLY_SUMMARY.tag}</Tag>
         </div>
 
         {/* Badges */}
@@ -1808,28 +1684,10 @@ export function ProgressScreen({ onNav }: { onNav?: (s: string) => void }) {
 export function AccountScreen({ onNav }: { onNav?: (s: string) => void }) {
   const theme = useTheme()
   const [modal, setModal] = useState<null | 'edit' | 'subscription' | 'records' | 'privacy'>(null)
-  const profile: ProfileData = { name: 'Ananya Sharma', email: 'ananya@fitpulse.app', height: '165', weight: '58', level: 'Intermediate' }
-  const records = [
-    { label: '5K Run', value: '28:30', icon: '🏃', color: CYAN },
-    { label: 'Bench Press', value: '100kg', icon: '💪', color: ORANGE, num: 100 },
-    { label: 'Workouts', value: '247', icon: '🏋️', color: G, num: 247 },
-    { label: 'Longest Streak', value: '42d', icon: '🔥', color: RED, num: 42 },
-  ]
-  const privacy = [
-    { key: 'p1', label: 'Private Profile', desc: 'Hide activity from friends', on: false },
-    { key: 'p2', label: 'Activity Status', desc: 'Show when you are online', on: true },
-    { key: 'p3', label: 'Data Sharing', desc: 'Share anonymized metrics', on: true },
-    { key: 'p4', label: 'Login Alerts', desc: 'Email on new device', on: true },
-  ]
-  const menu = [
-    { icon: '✏️', label: 'Edit Profile', sub: 'Update your information', color: G },
-    { icon: '🎯', label: 'Goals & Progress', sub: 'Track your milestones', color: CYAN },
-    { icon: '⌚', label: 'Device Sync', sub: 'Manage connected devices', color: LIME },
-    { icon: '⭐', label: 'Subscription', sub: 'FitPulse Pro · Active', color: ORANGE },
-    { icon: '🏆', label: 'Personal Records', sub: 'Your best performances', color: PURPLE },
-    { icon: '🔒', label: 'Privacy & Security', sub: 'Manage your data', color: MUTED },
-    { icon: '🚪', label: 'Sign Out', sub: null, color: RED },
-  ]
+  const profile: ProfileData = ACCOUNT_PROFILE
+  const records = PERSONAL_RECORDS
+  const privacy = PRIVACY_SETTINGS
+  const menu = ACCOUNT_MENU
 
   return (
     <div style={{ ...scr, overflow: 'hidden' }}>
@@ -1850,17 +1708,17 @@ export function AccountScreen({ onNav }: { onNav?: (s: string) => void }) {
           borderTop: `3px solid ${G}`,
         }}>
           <div style={{ position: 'relative', display: 'inline-block', marginBottom: 12 }}>
-            <div style={{ width: 72, height: 72, borderRadius: '50%', background: `linear-gradient(135deg,${G},${CYAN})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, boxShadow: `0 0 0 4px ${theme === 'dark' ? 'rgba(255,255,255,0.14)' : LIGHTER}, 0 0 0 6px ${G}30` }}>👩‍🦱</div>
+            <div style={{ width: 72, height: 72, borderRadius: '50%', background: `linear-gradient(135deg,${G},${CYAN})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, boxShadow: `0 0 0 4px ${theme === 'dark' ? 'rgba(255,255,255,0.14)' : LIGHTER}, 0 0 0 6px ${G}30` }}>{ACCOUNT_CARD.avatar}</div>
             <div style={{ position: 'absolute', bottom: 2, right: 2, width: 22, height: 22, borderRadius: '50%', background: G, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, border: `2px solid ${theme === 'dark' ? 'rgba(255,255,255,0.22)' : 'white'}` }}>✏️</div>
           </div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: TXT }}>Ananya Sharma</div>
-          <div style={{ fontSize: 12, color: MUTED, marginBottom: 6 }}>ananya@fitpulse.app</div>
-          <Tag color={LIME}>⭐ FitPulse Pro</Tag>
+          <div style={{ fontSize: 20, fontWeight: 800, color: TXT }}>{ACCOUNT_PROFILE.name}</div>
+          <div style={{ fontSize: 12, color: MUTED, marginBottom: 6 }}>{ACCOUNT_PROFILE.email}</div>
+          <Tag color={LIME}>{ACCOUNT_CARD.plan}</Tag>
           <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 18, paddingTop: 16, borderTop: `1px solid var(--fp-track)` }}>
-            {[{ v: '247', l: 'Workouts' }, { v: '100🔥', l: 'Day Streak' }, { v: '18', l: 'Badges' }].map((s, i) => (
+            {ACCOUNT_STATS.map((s, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: TXT }}>{s.v}</div>
-                <div style={{ fontSize: 10, color: MUTED }}>{s.l}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: TXT }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: MUTED }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -1897,7 +1755,7 @@ export function AccountScreen({ onNav }: { onNav?: (s: string) => void }) {
         </div>
 
         <div style={{ textAlign: 'center', padding: '18px 0', fontSize: 11, color: LIGHTER }}>
-          FitPulse v3.2.1 · Member since Jan 2024
+          {APP_FOOTER}
         </div>
       </div>
       </div>{/* end innerScroll */}
@@ -1926,35 +1784,7 @@ export function SettingsScreen({ onNav, theme = 'dark', onToggleTheme }: { onNav
   const [t, setT] = useState({ notif: true, dark: false, health: true, auto: false, sounds: true, haptics: true })
   const tog = (k: string) => setT(p => ({ ...p, [k]: !(p as any)[k] }))
 
-  const sections = [
-    {
-      title: 'Preferences',
-      items: [
-        { key: 'notif', icon: '🔔', label: 'Push Notifications', sub: 'Reminders & challenges', type: 'toggle' },
-        { key: 'sounds', icon: '🔊', label: 'Sounds', sub: 'Workout & achievement sounds', type: 'toggle' },
-        { key: 'haptics', icon: '📳', label: 'Haptic Feedback', sub: 'Vibration on interactions', type: 'toggle' },
-        { key: 'dark', icon: '🌙', label: 'Dark Mode', sub: theme === 'dark' ? 'Currently enabled' : 'Currently disabled', type: 'toggle' },
-      ],
-    },
-    {
-      title: 'Data & Privacy',
-      items: [
-        { key: 'health', icon: '❤️', label: 'Health Integration', sub: 'Sync with Apple / Google Health', type: 'toggle' },
-        { key: 'auto', icon: '🔄', label: 'Auto Backup', sub: 'Backup data to cloud', type: 'toggle' },
-        { icon: '🔐', label: 'Privacy Settings', sub: 'Manage your data', type: 'nav' },
-        { icon: '🔒', label: 'Security', sub: 'Biometrics & passcode', type: 'nav' },
-      ],
-    },
-    {
-      title: 'Support',
-      items: [
-        { icon: '🌐', label: 'Language', sub: 'English (US)', type: 'nav' },
-        { icon: '☁️', label: 'Backup & Restore', sub: 'Manage your data backup', type: 'nav' },
-        { icon: '💬', label: 'Help & Support', sub: 'FAQs and contact us', type: 'nav' },
-        { icon: 'ℹ️', label: 'About FitPulse', sub: 'v3.2.1 · Legal & licenses', type: 'nav' },
-      ],
-    },
-  ]
+  const sections = SETTINGS_SECTIONS
 
   return (
     <div style={{ ...scr, overflow: 'hidden' }}>
@@ -1981,7 +1811,7 @@ export function SettingsScreen({ onNav, theme = 'dark', onToggleTheme }: { onNav
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--fp-input-bg)', border: '1px solid var(--fp-field)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: TXT }}>{item.label}</div>
-                    <div style={{ fontSize: 11, color: MUTED }}>{item.sub}</div>
+                    <div style={{ fontSize: 11, color: MUTED }}>{item.key === 'dark' ? (theme === 'dark' ? 'Currently enabled' : 'Currently disabled') : item.sub}</div>
                   </div>
                   {item.type === 'toggle'
                     ? <Toggle on={item.key === 'dark' ? theme === 'dark' : (t as any)[item.key]} onToggle={() => item.key === 'dark' ? (onToggleTheme ? onToggleTheme() : tog('dark')) : tog(item.key)} />

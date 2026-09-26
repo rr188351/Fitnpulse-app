@@ -10,7 +10,7 @@
    :root[data-theme] attribute so widgets react to the toggle WITHOUT
    App.tsx needing to pass a prop (preserves existing app wiring).
    ─────────────────────────────────────────────────────────── */
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 /* ── Shared design tokens (mirror of screens.tsx; CSS-var backed) ── */
 const G = '#16A34A'
@@ -162,7 +162,7 @@ export function FitModal({ open, onClose, title, subtitle, children }: FitModalP
   if (!open) return null
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.45)' }} />
+      <div className="fp-modal-scrim" onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.45)' }} />
       <div className="fp-modal-wrap" style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: desktop ? 'center' : 'flex-end', justifyContent: 'center' }}>
         <div
           onClick={e => e.stopPropagation()}
@@ -188,12 +188,18 @@ export function FitModal({ open, onClose, title, subtitle, children }: FitModalP
   )
 }
 
-/* ── Gradient primary button ── */
-export function GBtn({ children, onClick, style, variant = 'solid', disabled }: { children: React.ReactNode; onClick?: () => void; style?: any; variant?: 'solid' | 'outline' | 'ghost'; disabled?: boolean }) {
+/* ── Gradient primary button ──
+   className is an opt-in hook for web-only sizing (.fp-web-btn in
+   index.css). Mobile/embed never pass it, so they render byte-for-
+   byte as before. */
+export function GBtn({ children, onClick, style, variant = 'solid', disabled, className }: { children: React.ReactNode; onClick?: () => void; style?: any; variant?: 'solid' | 'outline' | 'ghost'; disabled?: boolean; className?: string }) {
   const base = { fontFamily: FF, fontWeight: 700, borderRadius: 14, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'transform 120ms, box-shadow 120ms', width: '100%' }
-  if (variant === 'solid') return <button onClick={onClick} disabled={disabled} style={{ ...base, ...(style || {}), background: `linear-gradient(135deg,${G},${CYAN})`, color: '#fff', border: 'none', boxShadow: `0 8px 22px ${G}30` }}>{children}</button>
-  if (variant === 'outline') return <button onClick={onClick} disabled={disabled} style={{ ...base, ...(style || {}), background: 'transparent', color: TXT, border: `1px solid ${BORDER}` }}>{children}</button>
-  return <button onClick={onClick} disabled={disabled} style={{ ...base, ...(style || {}), background: 'none', border: 'none', color: MUTED }}>{children}</button>
+  /* `fp-btn` is a stable marker so the web shell can size app buttons
+     (index.css → `.fp-web .fp-btn`); mobile/embed never see that rule. */
+  const cls = className ? `fp-btn ${className}` : 'fp-btn'
+  if (variant === 'solid') return <button className={cls} onClick={onClick} disabled={disabled} style={{ ...base, ...(style || {}), background: `linear-gradient(135deg,${G},${CYAN})`, color: '#fff', border: 'none', boxShadow: `0 8px 22px ${G}30` }}>{children}</button>
+  if (variant === 'outline') return <button className={cls} onClick={onClick} disabled={disabled} style={{ ...base, ...(style || {}), background: 'transparent', color: TXT, border: `1px solid ${BORDER}` }}>{children}</button>
+  return <button className={cls} onClick={onClick} disabled={disabled} style={{ ...base, ...(style || {}), background: 'none', border: 'none', color: MUTED }}>{children}</button>
 }
 
 /* ── Spinner (CSS animation: spin) ── */
@@ -514,4 +520,45 @@ export function ShareProgressWidget({
       </div>
     </>
   )
+}
+
+/* ── Device-sync state machine (shared by mobile + web) ──────
+   idle → searching → found → connecting → syncing (progress) →
+   connected. One implementation, both presentations.            */
+export type SyncState = 'idle' | 'searching' | 'found' | 'connecting' | 'syncing' | 'connected'
+
+export function useDeviceSync() {
+  const [syncSt, setSyncSt] = useState<SyncState>('idle')
+  const [syncDevice, setSyncDevice] = useState<number | null>(null)
+  const [syncPct, setSyncPct] = useState(0)
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
+  const startSync = (i: number) => {
+    if (syncSt === 'searching' || syncSt === 'connecting' || syncSt === 'syncing') return
+    timersRef.current.forEach(clearTimeout)
+    timersRef.current = []
+    setSyncDevice(i)
+    setSyncPct(0)
+    setSyncSt('searching')
+    timersRef.current.push(setTimeout(() => setSyncSt('found'), 700))
+    timersRef.current.push(setTimeout(() => setSyncSt('connecting'), 1500))
+    timersRef.current.push(setTimeout(() => setSyncSt('syncing'), 2300))
+    timersRef.current.push(setTimeout(() => { setSyncSt('connected'); setSyncPct(100) }, 3400))
+  }
+
+  useEffect(() => {
+    if (syncSt !== 'syncing') return
+    setSyncPct(0)
+    let pct = 0
+    const iv = setInterval(() => {
+      pct = Math.min(100, pct + 5)
+      setSyncPct(pct)
+      if (pct >= 100) clearInterval(iv)
+    }, 55)
+    return () => clearInterval(iv)
+  }, [syncSt])
+
+  useEffect(() => () => { timersRef.current.forEach(clearTimeout) }, [])
+
+  return { syncSt, syncDevice, syncPct, startSync, isConnected: syncSt === 'connected' }
 }

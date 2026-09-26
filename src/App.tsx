@@ -16,60 +16,88 @@ import {
   AccountScreen,
   SettingsScreen,
 } from './screens'
+import { WebApp } from './weblayout'
+import {
+  WebHomeScreen,
+  WebWorkoutsScreen,
+  WebActivityLogScreen,
+  WebProgressScreen,
+  WebCommunityScreen,
+  WebAccountScreen,
+  WebSettingsScreen,
+} from './webscreens'
+import {
+  WebSplashScreen,
+  WebOnboardingScreen,
+  WebLoginScreen,
+  WebSignUpScreen,
+  WebProfileSetupScreen,
+  WebDeviceSyncScreen,
+  WebGoalSelectionScreen,
+  WebPermissionsScreen,
+} from './webauth'
 
-/* ── Responsive breakpoints (mobile / tablet / desktop) ─────
-   Mobile : < 768px    → existing 430px column layout (unchanged)
-   Tablet : 768–1024px (any pointer) + 1025–1400px on touch/coarse
-            devices (large tablets like iPad Pro 11"/13") →
-            same 430px phone design, uniformly scaled up via zoom
-            edge-to-edge (no side gaps, no stretch)
-   Desktop: > 1024px on fine-pointer devices, or > 1400px →
-            existing 430px centered column (unchanged) */
-function useBreakpoint(): 'mobile' | 'tablet' | 'desktop' {
-  const get = () => {
-    if (typeof window === 'undefined') return 'mobile' as const
+/* ── Layout modes ───────────────────────────────────────────
+   embed   : /?embed=1 or rendered inside the 3D-showcase iframe →
+             the phone design, uniformly scaled (unchanged: this is
+             what the 3D / mobile-case showcase renders)
+   mobile  : < 768px → existing 430px phone layout (unchanged)
+   tablet  : 768–1024px (any pointer) plus 1025–1400px on
+             touch/coarse devices → web app shell with the compact
+             icon sidebar and two-column widget grids
+   desktop : > 1024px on fine-pointer devices, or > 1400px →
+             web app shell with the full sidebar */
+export type LayoutMode = 'embed' | 'mobile' | 'tablet' | 'desktop'
 
-    // The 3D Lab renders Fitnpulse inside a high-resolution iframe.
-    // The iframe may be 1024/1536/2048px wide, but the app must
-    // keep its phone-style 430px layout and scale it proportionally.
-    const isEmbedded =
-      window.self !== window.top ||
-      new URLSearchParams(window.location.search).has('embed')
+export function detectLayoutMode(): LayoutMode {
+  if (typeof window === 'undefined') return 'mobile'
 
-    if (isEmbedded) {
-      return 'tablet' as const
-    }
+  // The 3D Lab renders Fitnpulse inside a high-resolution iframe.
+  // The iframe may be 1024/1536/2048px wide, but the app must
+  // keep its phone-style 430px layout and scale it proportionally.
+  const isEmbedded =
+    window.self !== window.top ||
+    new URLSearchParams(window.location.search).has('embed')
 
-    const w = window.innerWidth
-
-    if (w < 768) return 'mobile' as const
-    if (w <= 1024) return 'tablet' as const
-
-    if (w <= 1400) {
-      const coarse =
-        window.matchMedia?.('(pointer: coarse)').matches ?? false
-
-      if (coarse) return 'tablet' as const
-    }
-
-    return 'desktop' as const
+  if (isEmbedded) {
+    return 'embed'
   }
 
-  const [bp, setBp] = useState<'mobile' | 'tablet' | 'desktop'>(get)
+  const w = window.innerWidth
+
+  if (w < 768) return 'mobile'
+  if (w <= 1024) return 'tablet'
+
+  if (w <= 1400) {
+    const coarse =
+      window.matchMedia?.('(pointer: coarse)').matches ?? false
+
+    if (coarse) return 'tablet'
+  }
+
+  return 'desktop'
+}
+
+function useLayoutMode(): LayoutMode {
+  const [mode, setMode] = useState<LayoutMode>(detectLayoutMode)
 
   useEffect(() => {
-    const onResize = () => setBp(get())
+    const onResize = () => setMode(detectLayoutMode())
 
     window.addEventListener('resize', onResize)
     window.addEventListener('orientationchange', onResize)
 
+    const mq = window.matchMedia?.('(pointer: coarse)')
+    mq?.addEventListener?.('change', onResize)
+
     return () => {
       window.removeEventListener('resize', onResize)
       window.removeEventListener('orientationchange', onResize)
+      mq?.removeEventListener?.('change', onResize)
     }
   }, [])
 
-  return bp
+  return mode
 }
 
 const SCREEN_ORDER = [
@@ -102,7 +130,19 @@ export default function App() {
     return () => clearTimeout(t)
   }, [theme])
 
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.data && e.data.type === 'FP_SET_THEME') {
+        const next = e.data.theme === 'dark' ? 'dark' : 'light'
+        setTheme(next)
+      }
+    }
+    window.addEventListener('message', onMsg)
+    return () => window.removeEventListener('message', onMsg)
+  }, [])
   const toggleTheme = () => setTheme(t => (t === 'light' ? 'dark' : 'light'))
+
+
 
   const nav = (s: string) => {
     const ci = SCREEN_ORDER.indexOf(current)
@@ -136,10 +176,55 @@ export default function App() {
     return map[id] ?? <HomeScreen onNav={nav} />
   }
 
-  const bp = useBreakpoint()
-  const isTablet = bp === 'tablet'
+  /* ── Web routes ───────────────────────────────────────────
+     The four product areas plus the sub-screens the mobile bottom
+     nav / FAB already open (Workouts, Activity Log, Add Water,
+     Settings). Desktop + tablet render these through the web shell;
+     mobile and the embedded presentation keep the phone screens. */
+  const WEB_ROUTES = ['home', 'workouts', 'activity', 'addwater', 'community', 'progress', 'account', 'settings']
 
-  /* Tablet scale: fill the tablet viewport edge-to-edge with the
+  const renderWebScreen = (id: string) => {
+    const map: Record<string, React.ReactNode> = {
+      home:      <WebHomeScreen onNav={nav} />,
+      workouts:  <WebWorkoutsScreen onNav={nav} />,
+      activity:  <WebActivityLogScreen onNav={nav} />,
+      addwater:  <WebActivityLogScreen onNav={nav} initialTab="water" />,
+      community: <WebCommunityScreen />,
+      progress:  <WebProgressScreen onNav={nav} />,
+      account:   <WebAccountScreen onNav={nav} />,
+      settings:  <WebSettingsScreen onNav={nav} theme={theme} onToggleTheme={toggleTheme} />,
+    }
+    return map[id] ?? <WebHomeScreen onNav={nav} />
+  }
+
+  /* ── Web first-run journey ────────────────────────────────
+     Splash, walkthrough, login / sign up and the setup steps
+     (profile, device sync, goals, permissions) as full-page web
+     screens instead of the centred phone column. */
+  const WEB_AUTH_ROUTES = ['splash', 'onboard1', 'onboard2', 'onboard3', 'login', 'signup', 'profile-setup', 'device-sync', 'goals', 'permissions']
+
+  const renderWebAuthScreen = (id: string) => {
+    const map: Record<string, React.ReactNode> = {
+      splash:          <WebSplashScreen onNav={nav} />,
+      onboard1:        <WebOnboardingScreen slide={0} onNav={nav} />,
+      onboard2:        <WebOnboardingScreen slide={1} onNav={nav} />,
+      onboard3:        <WebOnboardingScreen slide={2} onNav={nav} />,
+      login:           <WebLoginScreen onNav={nav} />,
+      signup:          <WebSignUpScreen onNav={nav} />,
+      'profile-setup': <WebProfileSetupScreen onNav={nav} />,
+      'device-sync':   <WebDeviceSyncScreen onNav={nav} />,
+      goals:           <WebGoalSelectionScreen onNav={nav} />,
+      permissions:     <WebPermissionsScreen onNav={nav} />,
+    }
+    return map[id] ?? <WebSplashScreen onNav={nav} />
+  }
+
+  const mode = useLayoutMode()
+  const isWeb = mode === 'tablet' || mode === 'desktop'
+  const isScaled = mode === 'embed'
+
+  /* Embedded presentation scale (/?embed=1 and the 3D / mobile-case
+     showcase iframe): fill the embed viewport edge-to-edge with the
      unchanged 430px phone design, uniformly magnified.
      scale = viewportWidth / 430 → painted width = viewport width.
      768w → 1.79, 820w → 1.91, 900w → 2.09, 1024w → 2.38,
@@ -147,7 +232,7 @@ export default function App() {
      landscape (e.g. 1194w/1376w) caps at 2.6 and centers with
      slim balanced margins so text/cards stay usable.
      Cards/text/icons/spacing/nav all grow together — zero side gaps,
-     zero stretch. Mobile/desktop ignore this entirely.
+     zero stretch. Mobile and the web shell never use this.
      NOTE: coarse-pointer changes don't re-fire resize on some iPads,
      so also listen to the media query itself (see effect below). */
   const tabletScale = (() => {
@@ -159,13 +244,13 @@ export default function App() {
   /* Keep two decimals for the CSS var; the inline zoom gets full float. */
   const tabletScaleCss = tabletScale.toFixed(2)
 
-  /* Re-evaluate breakpoint + scale when the coarse-pointer match
+  /* Re-evaluate the embed scale when the coarse-pointer match
      changes (iPadOS docked keyboard / stage manager) and on every
      resize/orientation change. A state tick forces recompute since
      tabletScale derives from window.innerWidth each render. */
   const [, setTabletTick] = useState(0)
   useEffect(() => {
-    if (!isTablet) return
+    if (!isScaled) return
     const onChange = () => setTabletTick(t => t + 1)
     window.addEventListener('resize', onChange)
     window.addEventListener('orientationchange', onChange)
@@ -176,15 +261,40 @@ export default function App() {
       window.removeEventListener('orientationchange', onChange)
       mq?.removeEventListener?.('change', onChange)
     }
-  }, [isTablet])
+  }, [isScaled])
+
+  /* ── Web application shell (desktop + tablet) ─────────────
+     Same product, web presentation: sidebar navigation, top bar with
+     the page title / contextual actions and responsive dashboard
+     widgets. The pre-auth journey (splash, onboarding, login, profile
+     setup, device sync, goals, permissions) keeps the untouched
+     centred phone layout. */
+  if (isWeb) {
+    if (WEB_ROUTES.includes(current)) {
+      return (
+        <WebApp
+          mode={mode === 'desktop' ? 'desktop' : 'tablet'}
+          current={current}
+          onNav={nav}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        >
+          {renderWebScreen(current)}
+        </WebApp>
+      )
+    }
+
+    /* First-run journey → full-page web screens */
+    return renderWebAuthScreen(current)
+  }
 
   return (
-    /* App shell — mobile/desktop keep the 430px column exactly.
-       Tablet keeps the same 430px phone design and uniformly scales
-       it edge-to-edge (no side gaps), like a native tablet app. */
+    /* Phone layout + embedded presentation — the unchanged 430px
+       design. In embed mode it is uniformly scaled edge-to-edge
+       (no side gaps), exactly as the 3D showcase expects. */
     <div
-      data-breakpoint={bp}
-      className={isTablet ? 'fp-shell fp-shell--tablet' : 'fp-shell'}
+      data-breakpoint={mode}
+      className={isScaled ? 'fp-shell fp-shell--tablet' : 'fp-shell'}
       style={{
         width: '100vw',
         height: '100dvh',
@@ -198,18 +308,18 @@ export default function App() {
     >
       <div
         key={animKey}
-        data-breakpoint={bp}
-        data-tablet-scale={isTablet ? tabletScaleCss : undefined}
-        className={isTablet ? 'fp-frame fp-frame--tablet' : 'fp-frame'}
+        data-breakpoint={mode}
+        data-tablet-scale={isScaled ? tabletScaleCss : undefined}
+        className={isScaled ? 'fp-frame fp-frame--tablet' : 'fp-frame'}
         style={{
-          width: isTablet ? 430 : '100%',
+          width: isScaled ? 430 : '100%',
           maxWidth: 430,
           height: '100dvh',
           overflow: 'hidden',
           position: 'relative',
           margin: '0 auto',
           flexShrink: 0,
-          ...(isTablet
+          ...(isScaled
             ? {
                 zoom: tabletScale,
                 ['--fp-zoom' as any]: tabletScaleCss,
