@@ -52,12 +52,16 @@ export type LayoutMode = 'embed' | 'mobile' | 'tablet' | 'desktop'
 export function detectLayoutMode(): LayoutMode {
   if (typeof window === 'undefined') return 'mobile'
 
+  const params = new URLSearchParams(window.location.search)
+  const isExplicitWeb = params.get('presentation') === 'web'
+
   // The 3D Lab renders Fitnpulse inside a high-resolution iframe.
   // The iframe may be 1024/1536/2048px wide, but the app must
-  // keep its phone-style 430px layout and scale it proportionally.
+  // keep its phone-style 430px layout and scale it proportionally
+  // unless explicitly requested to render in desktop web mode (?presentation=web).
   const isEmbedded =
-    window.self !== window.top ||
-    new URLSearchParams(window.location.search).has('embed')
+    !isExplicitWeb &&
+    (window.self !== window.top || params.has('embed'))
 
   if (isEmbedded) {
     return 'embed'
@@ -108,7 +112,16 @@ const SCREEN_ORDER = [
 ]
 
 export default function App() {
-  const [current, setCurrent] = useState('splash')
+  const [current, setCurrent] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      const initScreen = p.get('screen') || p.get('route')
+      if (initScreen && SCREEN_ORDER.includes(initScreen)) {
+        return initScreen
+      }
+    }
+    return 'splash'
+  })
   const [animKey, setAnimKey] = useState(0)
   const [dir, setDir] = useState<'fwd' | 'bwd'>('fwd')
 
@@ -132,14 +145,20 @@ export default function App() {
 
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
-      if (e.data && e.data.type === 'FP_SET_THEME') {
+      if (!e.data || typeof e.data !== 'object') return
+      if (e.data.type === 'FP_SET_THEME') {
         const next = e.data.theme === 'dark' ? 'dark' : 'light'
         setTheme(next)
+      } else if (e.data.type === 'FP_NAVIGATE' || e.data.type === 'FP_WEB_NAVIGATE') {
+        const target = e.data.screen || e.data.route
+        if (target && SCREEN_ORDER.includes(target)) {
+          nav(target)
+        }
       }
     }
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
-  }, [])
+  }, [current])
   const toggleTheme = () => setTheme(t => (t === 'light' ? 'dark' : 'light'))
 
 
